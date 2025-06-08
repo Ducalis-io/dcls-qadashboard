@@ -20,12 +20,16 @@ interface BugPriorityProps {
   data: SeverityData[];
   title?: string;
   period?: string;
+  selectedPeriod?: string; // Выбранный период
+  onPeriodChange?: (period: string) => void; // Функция изменения периода
 }
 
 const BugPriority: React.FC<BugPriorityProps> = ({ 
   data, 
   title = 'Серьезность багов', 
-  period = '' 
+  period = '',
+  selectedPeriod,
+  onPeriodChange
 }) => {
   // Подготовка данных для диаграммы
   const chartData = {
@@ -45,16 +49,25 @@ const BugPriority: React.FC<BugPriorityProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden h-full">
-      {/* Заголовок с периодом */}
+      {/* Заголовок с дропдауном */}
       <div className="border-b border-gray-200 p-4">
-        <h2 className="text-xl font-semibold text-red-800"></h2>
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold text-red-800">Серьезность багов</h2>
+          {onPeriodChange && (
+            <select 
+              value={selectedPeriod} 
+              onChange={(e) => onPeriodChange(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-1 text-sm"
+            >
+              <option value="period1">03.02.2025 - 13.04.2025</option>
+              <option value="period2">13.04.2025 - 08.06.2025</option>
+            </select>
+          )}
+        </div>
       </div>
       
       {/* Круговая диаграмма - теперь идет первой */}
       <div className="p-6">
-        <h3 className="text-lg font-medium text-red-800 mb-4">
-          {title}
-        </h3>
         <div className="w-full max-w-md mx-auto h-64 relative">
           <Pie 
             data={chartData} 

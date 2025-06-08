@@ -44,9 +44,11 @@ interface ComponentData {
 interface ComponentAnalysisProps {
   data: ComponentData[];
   period: string;
+  selectedPeriod?: string; // Выбранный период
+  onPeriodChange?: (period: string) => void; // Функция изменения периода
 }
 
-const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({ data, period }) => {
+const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({ data, period, selectedPeriod, onPeriodChange }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dataState, setData] = useState<ComponentData[]>(data);
@@ -164,16 +166,25 @@ const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({ data, period }) =
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden h-full">
-      {/* Заголовок с периодом */}
+      {/* Заголовок с дропдауном */}
       <div className="border-b border-gray-200 p-4">
-        <h3 className="text-xl font-semibold text-red-800"></h3>
+        <div className="flex justify-between items-center">
+          <h3 className="text-xl font-semibold text-red-800">Распределение багов по компонентам</h3>
+          {onPeriodChange && (
+            <select 
+              value={selectedPeriod} 
+              onChange={(e) => onPeriodChange(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-1 text-sm"
+            >
+              <option value="period1">03.02.2025 - 13.04.2025</option>
+              <option value="period2">13.04.2025 - 08.06.2025</option>
+            </select>
+          )}
+        </div>
       </div>
       
       {/* Горизонтальная диаграмма - теперь идет первой */}
       <div className="p-6">
-        <h3 className="text-lg font-medium text-red-800 mb-4">
-          Распределение багов по компонентам
-        </h3>
         <div className="h-96">
           <Bar 
             data={chartData} 
