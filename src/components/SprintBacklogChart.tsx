@@ -72,7 +72,7 @@ const SprintBacklogChart: React.FC<SprintBacklogChartProps> = ({ data: initialDa
   const [data, setData] = useState<SprintData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [rawData, setRawData] = useState<any[]>([]);
+  const [rawData, setRawData] = useState<Record<string, string>[]>([]);
 
   // Загрузка данных при монтировании компонента
   useEffect(() => {

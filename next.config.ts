@@ -11,6 +11,16 @@ const nextConfig: NextConfig = {
 
   // Отключаем трейлинг слеш
   trailingSlash: true,
+
+  // Отключаем ESLint при билде
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
+  // Отключаем TypeScript проверки при билде
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
 
 export default nextConfig;

@@ -5,7 +5,7 @@ import {
 
 // Кэш для хранения данных с временем жизни
 interface CacheItem {
-  data: any[];
+  data: Record<string, string>[];
   timestamp: number;
 }
 
@@ -20,7 +20,9 @@ const CACHE_TTL = 5 * 60 * 1000;
  * @param url URL Google Sheets в формате CSV
  * @returns Массив объектов с данными
  */
-export async function loadSheetData(url: string): Promise<any[]> {
+export async function loadSheetData(
+  url: string
+): Promise<Record<string, string>[]> {
   try {
     // Проверяем наличие данных в кэше и их актуальность
     const cached = dataCache[url];
@@ -53,7 +55,7 @@ export async function loadSheetData(url: string): Promise<any[]> {
  * @param data Исходные данные
  * @returns Обработанные данные о спринтах
  */
-export function processSprintData(data: any[]) {
+export function processSprintData(data: Record<string, string>[]) {
   // Проверяем, что данные существуют
   if (!data || data.length === 0) {
     console.log("processSprintData: Нет данных для обработки");
@@ -134,7 +136,7 @@ export function processSprintData(data: any[]) {
  * @param data Исходные данные
  * @returns Обработанные данные о окружениях
  */
-export const processEnvironmentData = (data: any[]) => {
+export const processEnvironmentData = (data: Record<string, string>[]) => {
   // Проверяем, есть ли данные
   if (!data || data.length === 0) {
     return [];
@@ -248,7 +250,7 @@ export const processEnvironmentData = (data: any[]) => {
  * @param data Исходные данные
  * @returns Обработанные данные о компонентах
  */
-export function processComponentData(data: any[]) {
+export function processComponentData(data: Record<string, string>[]) {
   return data
     .filter((item) => item.Type === "Component")
     .map((item) => ({
@@ -312,7 +314,7 @@ export async function getAllData(url: string) {
 export async function getEnvironmentDataFromAPI(
   spreadsheetId: string,
   sheetName: string = "Sheet1"
-): Promise<any[]> {
+): Promise<{ name: string; bugCount: number; id: string }[]> {
   try {
     // Получаем данные из ячеек H2, H3, H4
     const data = await fetchGoogleSheetData(spreadsheetId, sheetName, "H2:H4");
