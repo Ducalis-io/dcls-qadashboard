@@ -40,8 +40,8 @@ const SHEET_URLS = [
 ];
 
 // Флаг для использования моковых данных вместо загрузки из Google Sheets
-// Установлено false, чтобы данные загружались из таблицы
-const USE_MOCK_DATA = false; // Используем реальные данные из Google Sheets
+// Установлено true для демонстрации на GitHub Pages
+const USE_MOCK_DATA = true; // Используем моковые данные для демонстрации
 
 // Регистрируем компоненты Chart.js
 ChartJS.register(

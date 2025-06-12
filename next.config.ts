@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
 
+  // Базовый путь для GitHub Pages
+  basePath: "/dcls-qadashboard",
+
   // Отключаем трейлинг слеш
   trailingSlash: true,
 
