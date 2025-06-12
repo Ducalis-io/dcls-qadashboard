@@ -14,6 +14,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { fetchSheetDataFromURL } from '@/utils/googleSheets';
+import { fetchGoogleSheetsCSV } from '@/utils/simpleGoogleSheets';
 
 // Моковые данные для гарантированного отображения - обновлено согласно скриншоту
 const MOCK_SPRINT_DATA: SprintData[] = [
@@ -30,18 +31,15 @@ const MOCK_SPRINT_DATA: SprintData[] = [
   { sprint: 'Sprint 13', date: '14.04.2025', backlogBugs: 0 }
 ];
 
-// Константы с URL Google Sheets - несколько вариантов для тестирования
+// Константы с URL Google Sheets - публичные CSV ссылки
 const SHEET_URLS = [
-  // Рабочая ссылка на таблицу
+  // Основная ссылка на таблицу (замените на вашу публичную CSV ссылку)
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbQv0mUFgEOplZ2en0PLdc_RnFvwaXMwG_vIeg0AaI3U6Z2M0v5mQfZuoA_tp1mz4sAYB8WmtoqE7X/pub?gid=1898074716&single=true&output=csv',
-  // Запасные варианты ссылок
-  'https://docs.google.com/spreadsheets/d/1sL8Ux5TVi96Kh4dYmqD2Tr6tesMEcA0Xd3fhVJ3Z8dI/export?format=csv',
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQtlQmrAkuA4MbojOsMRZZ9kbqJUMrJfNZl4chJYfLVZJM7LKgYyAn_6JnPCq2Wb9iFsZvQNkJe5K4r/pub?output=csv'
 ];
 
 // Флаг для использования моковых данных вместо загрузки из Google Sheets
-// Установлено true для демонстрации на GitHub Pages
-const USE_MOCK_DATA = true; // Используем моковые данные для демонстрации
+// Установлено false, чтобы загружать данные из Google Sheets
+const USE_MOCK_DATA = false; // Пробуем загрузить данные из Google Sheets
 
 // Регистрируем компоненты Chart.js
 ChartJS.register(
@@ -106,8 +104,14 @@ const SprintBacklogChart: React.FC<SprintBacklogChartProps> = ({ data: initialDa
           // Отладка URL
           console.log('Попытка загрузки данных из URL:', sheetUrl);
           
-          // Получаем данные из Google Sheets
-          const sheetData = await fetchSheetDataFromURL(sheetUrl);
+          // Пробуем сначала упрощенную загрузку
+          let sheetData = await fetchGoogleSheetsCSV(sheetUrl);
+          
+          // Если не получилось, используем старый метод
+          if (!sheetData || sheetData.length === 0) {
+            console.log('Упрощенная загрузка не удалась, пробуем старый метод');
+            sheetData = await fetchSheetDataFromURL(sheetUrl);
+          }
           
           // Отладка полученных данных
           console.log('Получены данные из таблицы:', sheetData);
