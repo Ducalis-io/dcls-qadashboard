@@ -18,9 +18,11 @@ interface BugReasonData {
 // Интерфейс для пропсов компонента
 interface BugReasonsProps {
   data: BugReasonData[];
+  selectedPeriod?: string; // Выбранный период
+  onPeriodChange?: (period: string) => void; // Функция изменения периода
 }
 
-const BugReasons: React.FC<BugReasonsProps> = ({ data }) => {
+const BugReasons: React.FC<BugReasonsProps> = ({ data, selectedPeriod, onPeriodChange }) => {
   // Подготовка данных для диаграммы
   const chartData = {
     labels: data.map(item => item.reason),
@@ -39,16 +41,26 @@ const BugReasons: React.FC<BugReasonsProps> = ({ data }) => {
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden h-full">
-      {/* Заголовок */}
+      {/* Заголовок с дропдауном */}
       <div className="border-b border-gray-200 p-4">
-        <h3 className="text-xl font-semibold text-red-800"></h3>
+        <div className="flex justify-between items-center">
+          <h3 className="text-xl font-semibold text-red-800">Причины возникновения багов</h3>
+          {onPeriodChange && (
+            <select 
+              value={selectedPeriod} 
+              onChange={(e) => onPeriodChange(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-1 text-sm"
+            >
+              <option value="period1">03.02.2025 - 13.04.2025</option>
+              <option value="period2">13.04.2025 - 08.06.2025</option>
+              <option value="period3">09.06.2025 - 06.07.2025</option>
+            </select>
+          )}
+        </div>
       </div>
       
       {/* Круговая диаграмма */}
       <div className="p-6">
-        <h3 className="text-lg font-medium text-red-800 mb-4">
-          Причина возникновения багов
-        </h3>
         <div className="w-full max-w-md mx-auto h-64 relative">
           <Pie 
             data={chartData} 

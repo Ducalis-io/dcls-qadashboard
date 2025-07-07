@@ -16,9 +16,11 @@ interface CoverageData {
 // Интерфейс для пропсов компонента
 interface TestCoverageProps {
   data: CoverageData;
+  selectedPeriod?: string; // Выбранный период
+  onPeriodChange?: (period: string) => void; // Функция изменения периода
 }
 
-const TestCoverage: React.FC<TestCoverageProps> = ({ data }) => {
+const TestCoverage: React.FC<TestCoverageProps> = ({ data, selectedPeriod, onPeriodChange }) => {
   // Рассчитываем процент покрытия
   const coveragePercentage = (data.automated / data.total) * 100;
   const nonCoveragePercentage = 100 - coveragePercentage;
@@ -44,9 +46,22 @@ const TestCoverage: React.FC<TestCoverageProps> = ({ data }) => {
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden h-full">
-      {/* Заголовок */}
+      {/* Заголовок с дропдауном */}
       <div className="border-b border-gray-200 p-4">
-        <h3 className="text-xl font-semibold text-red-800"></h3>
+        <div className="flex justify-between items-center">
+          <h3 className="text-xl font-semibold text-red-800">Покрытие автотестами</h3>
+          {onPeriodChange && (
+            <select 
+              value={selectedPeriod} 
+              onChange={(e) => onPeriodChange(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-1 text-sm"
+            >
+              <option value="period1">03.02.2025 - 13.04.2025</option>
+              <option value="period2">13.04.2025 - 08.06.2025</option>
+              <option value="period3">09.06.2025 - 06.07.2025</option>
+            </select>
+          )}
+        </div>
       </div>
       
       {/* Круговая диаграмма - теперь идет первой */}

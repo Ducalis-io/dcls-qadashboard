@@ -1,41 +1,18 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import BugStatistics from '@/components/BugStatistics';
-import BugPriority from '@/components/BugPriority';
-import BugEnvironment from '@/components/BugEnvironment';
-import BugResolution from '@/components/BugResolution';
-import ComponentAnalysis from '@/components/ComponentAnalysis';
-import BugTrackers from '@/components/BugTrackers';
-import TestCoverage from '@/components/TestCoverage';
-import SprintBacklogChart from '@/components/SprintBacklogChart';
-import BugReasons from '@/components/BugReasons';
-import { getEnvironmentData, getSprintData } from '@/services/dataService';
-import { fetchSheetDataFromURL } from '@/utils/googleSheets';
+import { useState } from 'react'
+import BugEnvironment from '@/components/BugEnvironment'
+import BugPriority from '@/components/BugPriority'
+import BugResolution from '@/components/BugResolution'
+import ComponentAnalysis from '@/components/ComponentAnalysis'
+import BugTrackers from '@/components/BugTrackers'
+import TestCoverage from '@/components/TestCoverage'
+import SprintBacklogChart from '@/components/SprintBacklogChart'
+import BugReasons from '@/components/BugReasons'
+import BugStatistics from '@/components/BugStatistics'
+import BugTrends from '@/components/BugTrends'
 
-// URL опубликованной таблицы
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbQv0mUFgEOplZ2en0PLdc_RnFvwaXMwG_vIeg0AaI3U6Z2M0v5mQfZuoA_tp1mz4sAYB8WmtoqE7X/pub?gid=1898074716&single=true&output=csv';
-
-// Примеры данных - в реальном приложении они будут загружаться из API или бэкенда
-const mockBugData = [
-  { date: '2023-01', open: 25, closed: 12, critical: 5, major: 12, minor: 8 },
-  { date: '2023-02', open: 28, closed: 15, critical: 6, major: 15, minor: 7 },
-  { date: '2023-03', open: 22, closed: 20, critical: 4, major: 10, minor: 8 },
-  { date: '2023-04', open: 18, closed: 22, critical: 3, major: 9, minor: 6 },
-  { date: '2023-05', open: 23, closed: 19, critical: 5, major: 11, minor: 7 },
-  { date: '2023-06', open: 20, closed: 21, critical: 4, major: 10, minor: 6 },
-];
-
-const mockTrendData = [
-  { month: 'Январь', newBugs: 25, resolvedBugs: 20, reopenedBugs: 3 },
-  { month: 'Февраль', newBugs: 28, resolvedBugs: 22, reopenedBugs: 4 },
-  { month: 'Март', newBugs: 22, resolvedBugs: 26, reopenedBugs: 2 },
-  { month: 'Апрель', newBugs: 18, resolvedBugs: 24, reopenedBugs: 1 },
-  { month: 'Май', newBugs: 23, resolvedBugs: 21, reopenedBugs: 5 },
-  { month: 'Июнь', newBugs: 20, resolvedBugs: 25, reopenedBugs: 2 },
-];
-
-// Данные для первого периода (03.02.2025-13.04.2025)
+// Моковые данные для периода 1
 const mockSeverityDataPeriod1 = [
   { label: 'blocker', count: 0, percentage: 0.00, color: 'rgba(220, 38, 127, 0.8)' },
   { label: 'critical', count: 6, percentage: 14.63, color: 'rgba(255, 99, 132, 0.8)' },
@@ -44,7 +21,28 @@ const mockSeverityDataPeriod1 = [
   { label: 'trivial', count: 9, percentage: 21.95, color: 'rgba(201, 203, 207, 0.8)' },
 ];
 
-// Данные для второго периода (13.04.2025-08.06.2025)
+const mockEnvironmentDataPeriod1 = [
+  { environment: 'prod', count: 41, percentage: 32.54, color: 'rgba(255, 99, 132, 0.8)' },
+  { environment: 'stage', count: 85, percentage: 67.46, color: 'rgba(75, 192, 192, 0.8)' },
+];
+
+const mockResolutionDataPeriod1 = [
+  { status: 'Done', count: 115, percentage: 91.27, color: 'rgba(75, 192, 192, 0.8)' },
+  { status: 'To Do', count: 11, percentage: 8.73, color: 'rgba(255, 159, 64, 0.8)' },
+];
+
+const mockComponentDataPeriod1 = [
+  { name: 'backlog', count: 12, percentage: 17.14 },
+  { name: 'voting', count: 8, percentage: 11.43 },
+  { name: 'ui_components', count: 6, percentage: 8.57 },
+  { name: 'auth', count: 10, percentage: 14.29 },
+  { name: 'api', count: 14, percentage: 20.00 },
+  { name: 'database', count: 7, percentage: 10.00 },
+  { name: 'notifications', count: 5, percentage: 7.14 },
+  { name: 'reports', count: 8, percentage: 11.43 }
+]
+
+// Моковые данные для периода 2
 const mockSeverityDataPeriod2 = [
   { label: 'blocker', count: 1, percentage: 4.17, color: 'rgba(220, 38, 127, 0.8)' },
   { label: 'critical', count: 1, percentage: 4.17, color: 'rgba(255, 99, 132, 0.8)' },
@@ -53,19 +51,9 @@ const mockSeverityDataPeriod2 = [
   { label: 'trivial', count: 7, percentage: 29.17, color: 'rgba(201, 203, 207, 0.8)' },
 ];
 
-const mockEnvironmentDataPeriod1 = [
-  { environment: 'prod', count: 41, percentage: 32.54, color: 'rgba(255, 99, 132, 0.8)' },
-  { environment: 'stage', count: 85, percentage: 67.46, color: 'rgba(75, 192, 192, 0.8)' },
-];
-
 const mockEnvironmentDataPeriod2 = [
   { environment: 'prod', count: 24, percentage: 20.69, color: 'rgba(255, 99, 132, 0.8)' },
   { environment: 'stage', count: 92, percentage: 79.31, color: 'rgba(75, 192, 192, 0.8)' },
-];
-
-const mockResolutionDataPeriod1 = [
-  { status: 'Done', count: 115, percentage: 91.27, color: 'rgba(75, 192, 192, 0.8)' },
-  { status: 'To Do', count: 11, percentage: 8.73, color: 'rgba(255, 159, 64, 0.8)' },
 ];
 
 const mockResolutionDataPeriod2 = [
@@ -73,156 +61,70 @@ const mockResolutionDataPeriod2 = [
   { status: 'To Do', count: 12, percentage: 11.32, color: 'rgba(255, 159, 64, 0.8)' },
 ];
 
-const mockComponentDataPeriod1: any[] = [
-  {
-    name: 'voting', 
-    count: 5, 
-    percentage: 12.20
-  },
-  {
-    name: 'ai', 
-    count: 1, 
-    percentage: 2.44
-  },
-  {
-    name: 'auth/registration', 
-    count: 1, 
-    percentage: 2.44
-  },
-  {
-    name: 'banner', 
-    count: 3, 
-    percentage: 7.32
-  },
-  {
-    name: 'matrix', 
-    count: 3, 
-    percentage: 7.32
-  },
-  {
-    name: 'backlog', 
-    count: 12, 
-    percentage: 29.27
-  },
-  {
-    name: 'templates', 
-    count: 1, 
-    percentage: 2.44
-  },
-  {
-    name: 'users', 
-    count: 2, 
-    percentage: 4.88
-  },
-  {
-    name: 'settings', 
-    count: 4, 
-    percentage: 9.76
-  },
-  {
-    name: 'sync back', 
-    count: 3, 
-    percentage: 7.32
-  },
-  {
-    name: 'evaluation', 
-    count: 1, 
-    percentage: 2.44
-  },
-  {
-    name: 'notifications', 
-    count: 1, 
-    percentage: 2.44
-  },
-  {
-    name: 'ui_components', 
-    count: 2, 
-    percentage: 4.88
-  },
-  {
-    name: 'url', 
-    count: 1, 
-    percentage: 2.44
-  },
-  {
-    name: 'noco', 
-    count: 1, 
-    percentage: 2.44
-  }
-];
+const mockComponentDataPeriod2 = [
+  { name: 'backlog', count: 8, percentage: 10.81 },
+  { name: 'voting', count: 12, percentage: 16.22 },
+  { name: 'ui_components', count: 4, percentage: 5.41 },
+  { name: 'auth', count: 15, percentage: 20.27 },
+  { name: 'api', count: 11, percentage: 14.86 },
+  { name: 'database', count: 9, percentage: 12.16 },
+  { name: 'notifications', count: 7, percentage: 9.46 },
+  { name: 'reports', count: 8, percentage: 10.81 }
+]
 
-const mockComponentDataPeriod2: any[] = [
-  {
-    name: 'voting (public 2)', 
-    count: 9, 
-    percentage: 33.33
-  },
-  {
-    name: 'course', 
-    count: 3, 
-    percentage: 11.11
-  },
-  {
-    name: 'backlog', 
-    count: 3, 
-    percentage: 11.11
-  },
-  {
-    name: 'ui_components', 
-    count: 3, 
-    percentage: 11.11
-  },
-  {
-    name: 'settings', 
-    count: 2, 
-    percentage: 7.41
-  },
-  {
-    name: 'sync back', 
-    count: 2, 
-    percentage: 7.41
-  },
-  {
-    name: 'banner', 
-    count: 1, 
-    percentage: 3.70
-  },
-  {
-    name: 'matrix', 
-    count: 1, 
-    percentage: 3.70
-  },
-  {
-    name: 'billing', 
-    count: 1, 
-    percentage: 3.70
-  },
-  {
-    name: 'alignment', 
-    count: 1, 
-    percentage: 3.70
-  },
-  {
-    name: 'notifications', 
-    count: 1, 
-    percentage: 3.70
-  }
-];
+// Моковые данные для периода 3
+const mockSeverityDataPeriod3 = [
+  { label: 'blocker', count: 0, percentage: 0.00, color: 'rgba(255, 0, 0, 0.8)' },
+  { label: 'critical', count: 2, percentage: 7.14, color: 'rgba(255, 99, 132, 0.8)' },
+  { label: 'major', count: 9, percentage: 32.14, color: 'rgba(255, 205, 86, 0.8)' },
+  { label: 'minor', count: 9, percentage: 32.14, color: 'rgba(75, 192, 192, 0.8)' },
+  { label: 'trivial', count: 8, percentage: 28.57, color: 'rgba(153, 102, 255, 0.8)' }
+]
 
+const mockEnvironmentDataPeriod3 = [
+  { environment: 'prod', count: 26, percentage: 33.77, color: 'rgba(255, 99, 132, 0.8)' },
+  { environment: 'stage', count: 51, percentage: 66.23, color: 'rgba(54, 162, 235, 0.8)' }
+]
+
+const mockResolutionDataPeriod3 = [
+  { status: 'Done', count: 58, percentage: 81.69, color: 'rgba(75, 192, 192, 0.8)' },
+  { status: 'To Do', count: 13, percentage: 18.31, color: 'rgba(255, 205, 86, 0.8)' }
+]
+
+const mockComponentDataPeriod3 = [
+  { name: 'backlog', count: 9, percentage: 28.13 },
+  { name: 'voting', count: 5, percentage: 15.63 },
+  { name: 'ui_components', count: 3, percentage: 9.38 },
+  { name: 'notifications', count: 2, percentage: 6.25 },
+  { name: 'csv', count: 2, percentage: 6.25 },
+  { name: 'ai', count: 1, percentage: 3.13 },
+  { name: 'criteria', count: 1, percentage: 3.13 },
+  { name: 'columns', count: 1, percentage: 3.13 },
+  { name: 'matrix', count: 1, percentage: 3.13 },
+  { name: 'templates', count: 1, percentage: 3.13 },
+  { name: 'users', count: 1, percentage: 3.13 },
+  { name: 'settings', count: 1, percentage: 3.13 },
+  { name: 'sync_back', count: 1, percentage: 3.13 },
+  { name: 'filtration', count: 1, percentage: 3.13 },
+  { name: 'url', count: 1, percentage: 3.13 },
+  { name: 'noco', count: 1, percentage: 3.13 }
+]
+
+// Данные для трекеров багов (используется TrackerData интерфейс)
 const mockTrackerDataPeriod1 = [
-  { name: 'jira', count: 6, percentage: 50.00, color: 'rgba(54, 162, 235, 0.8)' },
-  { name: 'linear', count: 2, percentage: 16.67, color: 'rgba(255, 99, 132, 0.8)' },
-  { name: 'asana', count: 2, percentage: 16.67, color: 'rgba(75, 192, 192, 0.8)' },
-  { name: 'youtrack', count: 1, percentage: 8.33, color: 'rgba(255, 159, 64, 0.8)' },
-  { name: 'kaiten', count: 1, percentage: 8.33, color: 'rgba(153, 102, 255, 0.8)' },
-];
+  { name: 'Jira', count: 25, percentage: 55.56, color: 'rgba(54, 162, 235, 0.8)' },
+  { name: 'GitHub', count: 15, percentage: 33.33, color: 'rgba(255, 99, 132, 0.8)' },
+  { name: 'Linear', count: 5, percentage: 11.11, color: 'rgba(75, 192, 192, 0.8)' }
+]
 
 const mockTrackerDataPeriod2 = [
-  { name: 'asana', count: 1, percentage: 50.00, color: 'rgba(75, 192, 192, 0.8)' },
-  { name: 'github', count: 1, percentage: 50.00, color: 'rgba(255, 159, 64, 0.8)' },
-];
+  { name: 'Jira', count: 30, percentage: 63.83, color: 'rgba(54, 162, 235, 0.8)' },
+  { name: 'GitHub', count: 12, percentage: 25.53, color: 'rgba(255, 99, 132, 0.8)' },
+  { name: 'Linear', count: 5, percentage: 10.64, color: 'rgba(75, 192, 192, 0.8)' }
+]
 
-const mockReasonsData = [
+// Данные для причин багов
+const mockReasonsDataPeriod1 = [
   { reason: 'специфический/редкий кейс', count: 9, percentage: 27.27, color: 'rgba(54, 162, 235, 0.8)' },
   { reason: 'недоработка в требованиях', count: 2, percentage: 6.06, color: 'rgba(255, 99, 132, 0.8)' },
   { reason: 'кейс не был предусмотрен', count: 6, percentage: 18.18, color: 'rgba(75, 192, 192, 0.8)' },
@@ -231,260 +133,217 @@ const mockReasonsData = [
   { reason: 'другое', count: 9, percentage: 27.27, color: 'rgba(201, 203, 207, 0.8)' },
 ];
 
+const mockReasonsDataPeriod2 = [
+  { reason: 'специфический/редкий кейс', count: 3, percentage: 25.00, color: 'rgba(54, 162, 235, 0.8)' },
+  { reason: 'недоработка в требованиях', count: 1, percentage: 9.38, color: 'rgba(255, 99, 132, 0.8)' },
+  { reason: 'кейс не был предусмотрен', count: 0, percentage: 21.88, color: 'rgba(75, 192, 192, 0.8)' },
+  { reason: 'не проверялось на регрессе', count: 5, percentage: 18.75, color: 'rgba(255, 159, 64, 0.8)' },
+  { reason: 'сломалось при мерже', count: 0, percentage: 3.13, color: 'rgba(153, 102, 255, 0.8)' },
+  { reason: 'другое', count: 4, percentage: 21.88, color: 'rgba(201, 203, 207, 0.8)' },
+];
+
+const mockReasonsDataPeriod3 = [
+  { reason: 'специфический/редкий кейс', count: 5, percentage: 22.73, color: 'rgba(54, 162, 235, 0.8)' },
+  { reason: 'недоработка в требованиях', count: 0, percentage: 4.55, color: 'rgba(255, 99, 132, 0.8)' },
+  { reason: 'кейс не был предусмотрен', count: 2, percentage: 18.18, color: 'rgba(75, 192, 192, 0.8)' },
+  { reason: 'не проверялось на регрессе', count: 7, percentage: 13.64, color: 'rgba(255, 159, 64, 0.8)' },
+  { reason: 'сломалось при мерже', count: 0, percentage: 9.09, color: 'rgba(153, 102, 255, 0.8)' },
+  { reason: 'другое', count: 3, percentage: 31.82, color: 'rgba(201, 203, 207, 0.8)' },
+];
+
+// Данные для покрытия тестами (объект, не массив!)
 const mockCoverageData = {
   automated: 143,
   total: 3680
-};
+}
 
-// Данные о багах в бэклоге по спринтам
-const mockSprintBacklogData = [
-  { sprint: 'Sprint 3', date: '03.02.2025', backlogBugs: 74 },
-  { sprint: 'Sprint 4', date: '10.02.2025', backlogBugs: 76 },
-  { sprint: 'Sprint 5', date: '17.02.2025', backlogBugs: 73 },
-  { sprint: 'Sprint 6', date: '24.02.2025', backlogBugs: 68 },
-  { sprint: 'Sprint 7', date: '03.03.2025', backlogBugs: 71 },
-  { sprint: 'Sprint 8', date: '10.03.2025', backlogBugs: 57 },
-  { sprint: 'Sprint 9', date: '17.03.2025', backlogBugs: 57 },
-  { sprint: 'Sprint 10', date: '24.03.2025', backlogBugs: 54 },
-  { sprint: 'Sprint 11', date: '31.03.2025', backlogBugs: 57 },
-  { sprint: 'Sprint 12', date: '07.04.2025', backlogBugs: 38 },
-  { sprint: 'Sprint 13', date: '14.04.2025', backlogBugs: 39 },
-];
+// Данные для статистики багов
+const mockStatisticsData = [
+  { date: '2025-02', open: 45, closed: 38, critical: 5, major: 15, minor: 25 },
+  { date: '2025-03', open: 52, closed: 41, critical: 8, major: 18, minor: 26 },
+  { date: '2025-04', open: 48, closed: 55, critical: 3, major: 20, minor: 25 },
+  { date: '2025-05', open: 38, closed: 45, critical: 2, major: 16, minor: 20 },
+  { date: '2025-06', open: 42, closed: 49, critical: 4, major: 18, minor: 20 }
+]
 
-// Период для отображения данных
-// Форматируем текущую дату в формат ДД.ММ.ГГГГ
-const formatDate = (date: Date): string => {
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const year = date.getFullYear();
-  return `${day}.${month}.${year}`;
-};
+// Данные для трендов
+const mockTrendsData = [
+  { month: 'Февраль', newBugs: 45, resolvedBugs: 38, reopenedBugs: 5 },
+  { month: 'Март', newBugs: 52, resolvedBugs: 41, reopenedBugs: 3 },
+  { month: 'Апрель', newBugs: 48, resolvedBugs: 55, reopenedBugs: 2 },
+  { month: 'Май', newBugs: 38, resolvedBugs: 45, reopenedBugs: 4 },
+  { month: 'Июнь', newBugs: 42, resolvedBugs: 49, reopenedBugs: 1 }
+]
 
-const currentDate = new Date();
-const startDate = '03.02.2025';
-const endDate = formatDate(currentDate);
-const dataPeriod = `${startDate} - ${endDate}`;
-
-export default function Home() {
-  const [activeTab, setActiveTab] = useState('overview');
-  // Состояние для выбранного периода отчета
-  const [selectedPeriod, setSelectedPeriod] = useState('period1');
-  // Добавляем состояния для хранения реальных данных
-  const [environmentData, setEnvironmentData] = useState(mockEnvironmentDataPeriod1);
-  const [sprintBacklogData, setSprintBacklogData] = useState(mockSprintBacklogData);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Функция для получения данных по выбранному периоду
-  const getCurrentPeriodData = () => {
-    if (selectedPeriod === 'period1') {
+// Функция для получения данных текущего периода
+const getCurrentPeriodData = (period: string) => {
+  switch (period) {
+    case 'period1':
       return {
+        severity: mockSeverityDataPeriod1,
         environment: mockEnvironmentDataPeriod1,
         resolution: mockResolutionDataPeriod1,
-        severity: mockSeverityDataPeriod1,
-        tracker: mockTrackerDataPeriod1,
         component: mockComponentDataPeriod1,
-        periodText: '03.02.2025 - 13.04.2025'
-      };
-    } else {
+        trackers: mockTrackerDataPeriod1,
+        reasons: mockReasonsDataPeriod1
+      }
+    case 'period2':
       return {
+        severity: mockSeverityDataPeriod2,
         environment: mockEnvironmentDataPeriod2,
         resolution: mockResolutionDataPeriod2,
-        severity: mockSeverityDataPeriod2,
-        tracker: mockTrackerDataPeriod2,
         component: mockComponentDataPeriod2,
-        periodText: '13.04.2025 - 08.06.2025'
-      };
-    }
-  };
-
-  // Загружаем данные при монтировании компонента
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      
-      try {
-        // Загружаем данные об окружениях для отображения в компоненте BugEnvironment
-        const envData = await getEnvironmentData(SHEET_URL);
-        console.log('Загружены данные об окружениях:', envData);
-        
-        // Генерируем цвета и проценты для окружений
-        if (envData && envData.length > 0) {
-          const totalBugs = envData.reduce((sum, env) => sum + (env.bugCount || 0), 0);
-          const processedEnvData = envData.map((env, index) => {
-            // Генерируем случайный цвет для каждого окружения
-            const hue = Math.floor(Math.random() * 360);
-            
-            return {
-              environment: env.name,
-              count: env.bugCount || 0,
-              percentage: totalBugs > 0 ? ((env.bugCount || 0) / totalBugs) * 100 : 0,
-              color: `hsla(${hue}, 70%, 60%, 0.8)`
-            };
-          });
-          
-          // Устанавливаем данные окружений
-          setEnvironmentData(processedEnvData);
-        }
-        
-        // Загружаем данные о спринтах для отображения в компоненте SprintBacklogChart
-        try {
-          const sprintData = await getSprintData(SHEET_URL);
-          console.log('Загружены данные о спринтах:', sprintData);
-          
-          if (sprintData && sprintData.length > 0) {
-            // Устанавливаем данные о спринтах
-            setSprintBacklogData(sprintData);
-          }
-        } catch (sprintError) {
-          console.error('Ошибка при загрузке данных о спринтах:', sprintError);
-        }
-      } catch (error) {
-        console.error('Ошибка при загрузке данных:', error);
-      } finally {
-        setLoading(false);
+        trackers: mockTrackerDataPeriod2,
+        reasons: mockReasonsDataPeriod2
       }
-    }
-    
-    loadData();
-  }, []);
+    case 'period3':
+      return {
+        severity: mockSeverityDataPeriod3,
+        environment: mockEnvironmentDataPeriod3,
+        resolution: mockResolutionDataPeriod3,
+        component: mockComponentDataPeriod3,
+        trackers: [], // Пустой массив для периода 3
+        reasons: mockReasonsDataPeriod3
+      }
+    default:
+      return {
+        severity: mockSeverityDataPeriod1,
+        environment: mockEnvironmentDataPeriod1,
+        resolution: mockResolutionDataPeriod1,
+        component: mockComponentDataPeriod1,
+        trackers: mockTrackerDataPeriod1,
+        reasons: mockReasonsDataPeriod1
+      }
+  }
+}
+
+export default function Home() {
+  const [selectedPeriod, setSelectedPeriod] = useState('period1')
+  const [activeTab, setActiveTab] = useState('overview') // Добавляем состояние для вкладок
+  const currentData = getCurrentPeriodData(selectedPeriod)
+
+  // Компонент для вкладок
+  const TabButton = ({ id, label, isActive, onClick }: {
+    id: string
+    label: string
+    isActive: boolean
+    onClick: () => void
+  }) => (
+    <button
+      onClick={onClick}
+      className={`px-6 py-2 font-medium rounded-t-lg transition-colors ${
+        isActive
+          ? 'bg-red-600 text-white border-b-2 border-red-600'
+          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+      }`}
+    >
+      {label}
+    </button>
+  )
 
   return (
     <main className="min-h-screen bg-gray-100">
-      {/* Заголовок дашборда */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Заголовок */}
+        <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">QA Dashboard</h1>
-          <p className="mt-1 text-gray-500">Анализ багов и контроль качества</p>
+          <p className="text-gray-600 mt-1">Анализ багов и контроль качества</p>
         </div>
-      </div>
-      
-      {/* Навигация по дашборду */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-4">
-            <button 
-              className={`px-3 py-2 text-sm font-medium rounded-md ${
-                activeTab === 'overview' 
-                  ? 'bg-red-800 text-white' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+        
+        {/* Вкладки */}
+        <div className="mb-6">
+          <div className="flex space-x-1 border-b">
+            <TabButton
+              id="overview"
+              label="Обзор"
+              isActive={activeTab === 'overview'}
               onClick={() => setActiveTab('overview')}
-            >
-              Обзор
-            </button>
-            <button 
-              className={`px-3 py-2 text-sm font-medium rounded-md ${
-                activeTab === 'details' 
-                  ? 'bg-red-800 text-white' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+            />
+            <TabButton
+              id="details"
+              label="Детали"
+              isActive={activeTab === 'details'}
               onClick={() => setActiveTab('details')}
-            >
-              Детали
-            </button>
-            <button 
-              className={`px-3 py-2 text-sm font-medium rounded-md ${
-                activeTab === 'backlog' 
-                  ? 'bg-red-800 text-white' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-              onClick={() => setActiveTab('backlog')}
-            >
-              Автоматизация
-            </button>
-          </nav>
+            />
+            <TabButton
+              id="automation"
+              label="Автоматизация"
+              isActive={activeTab === 'automation'}
+              onClick={() => setActiveTab('automation')}
+            />
+          </div>
         </div>
-      </div>
-      
-      {/* Содержимое дашборда */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {loading ? (
-          <div className="text-center py-10">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-red-800 border-t-transparent"></div>
-            <p className="mt-2 text-gray-600">Загрузка данных...</p>
-          </div>
-        ) : error ? (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            <p>{error}</p>
-          </div>
-        ) : (
-          <>
-            {activeTab === 'overview' && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-                {/* SprintBacklogChart занимает всю ширину вверху */}
-                <div className="col-span-1 lg:col-span-3">
-                  <SprintBacklogChart data={sprintBacklogData} period={dataPeriod} />
-                </div>
-                
-                {/* Первый ряд: BugEnvironment занимает одну колонку */}
-                <div className="lg:col-span-1 h-full">
-                  <BugEnvironment 
-                    data={getCurrentPeriodData().environment} 
-                    period={getCurrentPeriodData().periodText}
-                    selectedPeriod={selectedPeriod}
-                    onPeriodChange={setSelectedPeriod}
-                  />
-                </div>
-                
-                {/* Второй ряд: BugResolution и BugPriority занимают по одной колонке */}
-                <div className="h-full">
-                  <BugResolution 
-                    data={getCurrentPeriodData().resolution}
-                    selectedPeriod={selectedPeriod}
-                    onPeriodChange={setSelectedPeriod}
-                  />
-                </div>
-                
-                <div className="h-full">
-                  <BugPriority 
-                    data={getCurrentPeriodData().severity} 
-                    period={getCurrentPeriodData().periodText}
-                    selectedPeriod={selectedPeriod}
-                    onPeriodChange={setSelectedPeriod}
-                  />
-                </div>
-              </div>
-            )}
+
+        {/* Содержимое вкладок */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {/* Динамика багов по спринтам */}
+            <div className="w-full">
+              <SprintBacklogChart />
+            </div>
             
-            {activeTab === 'details' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="lg:col-span-2">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Детальная информация</h2>
-                </div>
-                
-                <div className="space-y-6">
-                  <ComponentAnalysis 
-                    data={getCurrentPeriodData().component} 
-                    period={getCurrentPeriodData().periodText}
-                    selectedPeriod={selectedPeriod}
-                    onPeriodChange={setSelectedPeriod}
-                  />
-                  <BugReasons data={mockReasonsData} />
-                </div>
-                
-                <div className="space-y-6">
-                  <BugTrackers 
-                    data={getCurrentPeriodData().tracker}
-                    selectedPeriod={selectedPeriod}
-                    onPeriodChange={setSelectedPeriod}
-                  />
-                </div>
-              </div>
-            )}
+            {/* Основные метрики */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <BugEnvironment 
+                data={currentData.environment}
+                period=""
+                selectedPeriod={selectedPeriod}
+                onPeriodChange={setSelectedPeriod}
+              />
+              <BugResolution 
+                data={currentData.resolution}
+                selectedPeriod={selectedPeriod}
+                onPeriodChange={setSelectedPeriod}
+              />
+              <BugPriority 
+                data={currentData.severity}
+                selectedPeriod={selectedPeriod}
+                onPeriodChange={setSelectedPeriod}
+              />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'details' && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold text-gray-800">Детальная информация</h2>
             
-            {activeTab === 'backlog' && (
-              <div className="grid grid-cols-1 gap-6">
-                <div className="col-span-1">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Покрытие автотестами</h2>
-                </div>
-                
-                <div className="h-full">
-                  <TestCoverage data={mockCoverageData} />
-                </div>
-              </div>
-            )}
-          </>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <ComponentAnalysis 
+                data={currentData.component}
+                period=""
+                selectedPeriod={selectedPeriod}
+                onPeriodChange={setSelectedPeriod}
+              />
+              <BugTrackers 
+                data={currentData.trackers}
+                selectedPeriod={selectedPeriod}
+                onPeriodChange={setSelectedPeriod}
+              />
+            </div>
+            
+            <div className="w-full">
+              <BugReasons 
+                data={currentData.reasons} 
+                selectedPeriod={selectedPeriod}
+                onPeriodChange={setSelectedPeriod}
+              />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'automation' && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold text-gray-800">Покрытие автотестами</h2>
+            
+            <div className="w-full max-w-2xl mx-auto">
+              <TestCoverage
+                data={mockCoverageData}
+                selectedPeriod={selectedPeriod}
+                onPeriodChange={setSelectedPeriod}
+              />
+            </div>
+          </div>
         )}
       </div>
     </main>
