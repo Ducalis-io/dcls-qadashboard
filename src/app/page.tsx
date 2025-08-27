@@ -110,6 +110,70 @@ const mockComponentDataPeriod3 = [
   { name: 'noco', count: 1, percentage: 3.13 }
 ]
 
+// Моковые данные для периода 4 (07.07.2025 - 03.08.2025)
+const mockSeverityDataPeriod4 = [
+  { label: 'blocker', count: 0, percentage: 0.00, color: 'rgba(220, 38, 127, 0.8)' },
+  { label: 'critical', count: 1, percentage: 5.26, color: 'rgba(255, 99, 132, 0.8)' },
+  { label: 'major', count: 4, percentage: 14.04, color: 'rgba(255, 159, 64, 0.8)' },
+  { label: 'minor', count: 7, percentage: 43.86, color: 'rgba(75, 192, 192, 0.8)' },
+  { label: 'trivial', count: 0, percentage: 36.84, color: 'rgba(201, 203, 207, 0.8)' },
+];
+
+const mockEnvironmentDataPeriod4 = [
+  { environment: 'prod', count: 12, percentage: 21.05, color: 'rgba(255, 99, 132, 0.8)' },
+  { environment: 'stage', count: 45, percentage: 78.95, color: 'rgba(75, 192, 192, 0.8)' },
+];
+
+const mockResolutionDataPeriod4 = [
+  { status: 'Done', count: 52, percentage: 84.21, color: 'rgba(75, 192, 192, 0.8)' },
+  { status: 'To Do', count: 5, percentage: 15.79, color: 'rgba(255, 159, 64, 0.8)' },
+];
+
+const mockComponentDataPeriod4 = [
+  { name: 'ai', count: 1, percentage: 7.69 },
+  { name: 'filters', count: 1, percentage: 7.69 },
+  { name: 'criteria', count: 1, percentage: 7.69 },
+  { name: 'billing', count: 1, percentage: 7.69 },
+  { name: 'backlog', count: 1, percentage: 7.69 },
+  { name: 'voting', count: 4, percentage: 30.77 },
+  { name: 'users', count: 1, percentage: 7.69 },
+  { name: 'sync back', count: 1, percentage: 7.69 },
+  { name: 'url', count: 2, percentage: 15.38 }
+]
+
+// Моковые данные для периода 5 (04.08.2025 - 31.08.2025)
+const mockSeverityDataPeriod5 = [
+  { label: 'blocker', count: 0, percentage: 0.00, color: 'rgba(220, 38, 127, 0.8)' },
+  { label: 'critical', count: 2, percentage: 10.00, color: 'rgba(255, 99, 132, 0.8)' },
+  { label: 'major', count: 5, percentage: 25.00, color: 'rgba(255, 159, 64, 0.8)' },
+  { label: 'minor', count: 9, percentage: 45.00, color: 'rgba(75, 192, 192, 0.8)' },
+  { label: 'trivial', count: 4, percentage: 20.00, color: 'rgba(201, 203, 207, 0.8)' },
+];
+
+const mockEnvironmentDataPeriod5 = [
+  { environment: 'prod', count: 20, percentage: 28.57, color: 'rgba(255, 99, 132, 0.8)' },
+  { environment: 'stage', count: 50, percentage: 71.43, color: 'rgba(75, 192, 192, 0.8)' },
+];
+
+const mockResolutionDataPeriod5 = [
+  { status: 'Done', count: 52, percentage: 83.87, color: 'rgba(75, 192, 192, 0.8)' },
+  { status: 'To Do', count: 10, percentage: 16.13, color: 'rgba(255, 159, 64, 0.8)' },
+];
+
+const mockComponentDataPeriod5 = [
+  { name: 'workspace', count: 5, percentage: 20.83 },
+  { name: 'columns', count: 2, percentage: 8.33 },
+  { name: 'criteria', count: 1, percentage: 4.17 },
+  { name: 'billing', count: 1, percentage: 4.17 },
+  { name: 'backlog', count: 3, percentage: 12.50 },
+  { name: 'voting', count: 6, percentage: 25.00 },
+  { name: 'custom_fields', count: 1, percentage: 4.17 },
+  { name: 'users', count: 1, percentage: 4.17 },
+  { name: 'settings', count: 1, percentage: 4.17 },
+  { name: 'ui_components', count: 2, percentage: 8.33 },
+  { name: 'links', count: 1, percentage: 4.17 }
+]
+
 // Данные для трекеров багов (используется TrackerData интерфейс)
 const mockTrackerDataPeriod1 = [
   { name: 'Jira', count: 25, percentage: 55.56, color: 'rgba(54, 162, 235, 0.8)' },
@@ -121,6 +185,22 @@ const mockTrackerDataPeriod2 = [
   { name: 'Jira', count: 30, percentage: 63.83, color: 'rgba(54, 162, 235, 0.8)' },
   { name: 'GitHub', count: 12, percentage: 25.53, color: 'rgba(255, 99, 132, 0.8)' },
   { name: 'Linear', count: 5, percentage: 10.64, color: 'rgba(75, 192, 192, 0.8)' }
+]
+
+const mockTrackerDataPeriod3 = [
+  { name: 'Jira', count: 18, percentage: 64.29, color: 'rgba(54, 162, 235, 0.8)' },
+  { name: 'GitHub', count: 8, percentage: 28.57, color: 'rgba(255, 99, 132, 0.8)' },
+  { name: 'Linear', count: 2, percentage: 7.14, color: 'rgba(75, 192, 192, 0.8)' }
+]
+
+const mockTrackerDataPeriod4 = [
+  { name: 'Jira', count: 2, percentage: 100, color: 'rgba(54, 162, 235, 0.8)' }
+]
+
+const mockTrackerDataPeriod5 = [
+  { name: 'jira', count: 1, percentage: 33.33, color: 'rgba(54, 162, 235, 0.8)' },
+  { name: 'asana', count: 1, percentage: 33.33, color: 'rgba(75, 192, 192, 0.8)' },
+  { name: 'gitgub', count: 1, percentage: 33.33, color: 'rgba(255, 159, 64, 0.8)' }
 ]
 
 // Данные для причин багов
@@ -151,9 +231,26 @@ const mockReasonsDataPeriod3 = [
   { reason: 'другое', count: 3, percentage: 31.82, color: 'rgba(201, 203, 207, 0.8)' },
 ];
 
+const mockReasonsDataPeriod4 = [
+  { reason: 'специфический/редкий кейс', count: 1, percentage: 14.04, color: 'rgba(54, 162, 235, 0.8)' },
+  { reason: 'недоработка в требованиях', count: 1, percentage: 5.26, color: 'rgba(255, 99, 132, 0.8)' },
+  { reason: 'кейс не был предусмотрен', count: 3, percentage: 7.02, color: 'rgba(75, 192, 192, 0.8)' },
+  { reason: 'не проверялось на регрессе', count: 2, percentage: 21.05, color: 'rgba(255, 159, 64, 0.8)' },
+  { reason: 'сломалось при мерже', count: 0, percentage: 3.51, color: 'rgba(153, 102, 255, 0.8)' },
+  { reason: 'другое', count: 5, percentage: 49.12, color: 'rgba(201, 203, 207, 0.8)' },
+];
+
+const mockReasonsDataPeriod5 = [
+  { reason: 'специфический/редкий кейс', count: 2, percentage: 12.50, color: 'rgba(54, 162, 235, 0.8)' },
+  { reason: 'недоработка в требованиях', count: 3, percentage: 18.75, color: 'rgba(255, 99, 132, 0.8)' },
+  { reason: 'кейс не был предусмотрен', count: 1, percentage: 6.25, color: 'rgba(75, 192, 192, 0.8)' },
+  { reason: 'не проверялось на регрессе', count: 4, percentage: 25.00, color: 'rgba(255, 159, 64, 0.8)' },
+  { reason: 'другое', count: 6, percentage: 37.50, color: 'rgba(201, 203, 207, 0.8)' },
+];
+
 // Данные для покрытия тестами (объект, не массив!)
 const mockCoverageData = {
-  automated: 143,
+  automated: 151,
   total: 3680
 }
 
@@ -202,8 +299,26 @@ const getCurrentPeriodData = (period: string) => {
         environment: mockEnvironmentDataPeriod3,
         resolution: mockResolutionDataPeriod3,
         component: mockComponentDataPeriod3,
-        trackers: [], // Пустой массив для периода 3
+        trackers: mockTrackerDataPeriod3,
         reasons: mockReasonsDataPeriod3
+      }
+    case 'period4':
+      return {
+        severity: mockSeverityDataPeriod4,
+        environment: mockEnvironmentDataPeriod4,
+        resolution: mockResolutionDataPeriod4,
+        component: mockComponentDataPeriod4,
+        trackers: mockTrackerDataPeriod4,
+        reasons: mockReasonsDataPeriod4
+      }
+    case 'period5':
+      return {
+        severity: mockSeverityDataPeriod5,
+        environment: mockEnvironmentDataPeriod5,
+        resolution: mockResolutionDataPeriod5,
+        component: mockComponentDataPeriod5,
+        trackers: mockTrackerDataPeriod5,
+        reasons: mockReasonsDataPeriod5
       }
     default:
       return {

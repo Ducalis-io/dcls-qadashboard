@@ -34,7 +34,7 @@ const MOCK_SPRINT_DATA: SprintData[] = [
 // Константы с URL Google Sheets - публичные CSV ссылки
 const SHEET_URLS = [
   // Основная ссылка на таблицу (замените на вашу публичную CSV ссылку)
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbQv0mUFgEOplZ2en0PLdc_RnFvwaXMwG_vIeg0AaI3U6Z2M0v5mQfZuoA_tp1mz4sAYB8WmtoqE7X/pub?gid=1898074716&single=true&output=csv',
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vSRuWLNT-ndzf4VP3VGl0YYYGBPY0hwtjCzsG9v8gMiIUvcq3C-UG9V9FEFMR6eUJCLiZkKCXfmgoor/pub?gid=1898074716&single=true&output=csv',
 ];
 
 // Флаг для использования моковых данных вместо загрузки из Google Sheets

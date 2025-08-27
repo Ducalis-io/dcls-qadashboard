@@ -6,7 +6,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { loadSheetData } from '@/services/dataService';
 
 // ID таблицы из URL
-const SPREADSHEET_ID = '2PACX-1vSbQv0mUFgEOplZ2en0PLdc_RnFvwaXMwG_vIeg0AaI3U6Z2M0v5mQfZuoA_tp1mz4sAYB8WmtoqE7X'; // Замените на ваш ID
+const SPREADSHEET_ID = '2PACX-1vSRuWLNT-ndzf4VP3VGl0YYYGBPY0hwtjCzsG9v8gMiIUvcq3C-UG9V9FEFMR6eUJCLiZkKCXfmgoor'; // Обновленный ID таблицы
 // Имя листа и диапазон
 const SHEET_NAME = 'backlog';
 const RANGE = 'G2:H4'; // Диапазон, где G8 содержит "prod", G9 содержит "stage" и G10 содержит "total"
@@ -397,6 +397,8 @@ const BugEnvironment: React.FC<BugEnvironmentProps> = ({ data: initialData, peri
               <option value="period1">03.02.2025 - 13.04.2025</option>
               <option value="period2">13.04.2025 - 08.06.2025</option>
               <option value="period3">09.06.2025 - 06.07.2025</option>
+              <option value="period4">07.07.2025 - 03.08.2025</option>
+              <option value="period5">04.08.2025 - 31.08.2025</option>
             </select>
           )}
         </div>
