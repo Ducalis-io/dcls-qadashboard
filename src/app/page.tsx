@@ -32,14 +32,21 @@ const mockResolutionDataPeriod1 = [
 ];
 
 const mockComponentDataPeriod1 = [
-  { name: 'backlog', count: 12, percentage: 17.14 },
-  { name: 'voting', count: 8, percentage: 11.43 },
-  { name: 'ui_components', count: 6, percentage: 8.57 },
-  { name: 'auth', count: 10, percentage: 14.29 },
-  { name: 'api', count: 14, percentage: 20.00 },
-  { name: 'database', count: 7, percentage: 10.00 },
-  { name: 'notifications', count: 5, percentage: 7.14 },
-  { name: 'reports', count: 8, percentage: 11.43 }
+  { name: 'ai', count: 1, percentage: 2.44 },
+  { name: 'auth/registration', count: 1, percentage: 2.44 },
+  { name: 'banner', count: 3, percentage: 7.32 },
+  { name: 'matrix', count: 3, percentage: 7.32 },
+  { name: 'backlog', count: 12, percentage: 29.27 },
+  { name: 'voting', count: 5, percentage: 12.20 },
+  { name: 'templates', count: 1, percentage: 2.44 },
+  { name: 'users', count: 2, percentage: 4.88 },
+  { name: 'settings', count: 4, percentage: 9.76 },
+  { name: 'sync back', count: 3, percentage: 7.32 },
+  { name: 'evaluation', count: 1, percentage: 2.44 },
+  { name: 'notifications', count: 1, percentage: 2.44 },
+  { name: 'ui_components', count: 2, percentage: 4.88 },
+  { name: 'links', count: 1, percentage: 2.44 },
+  { name: 'noco', count: 1, percentage: 2.44 }
 ]
 
 // Моковые данные для периода 2
@@ -62,14 +69,17 @@ const mockResolutionDataPeriod2 = [
 ];
 
 const mockComponentDataPeriod2 = [
-  { name: 'backlog', count: 8, percentage: 10.81 },
-  { name: 'voting', count: 12, percentage: 16.22 },
-  { name: 'ui_components', count: 4, percentage: 5.41 },
-  { name: 'auth', count: 15, percentage: 20.27 },
-  { name: 'api', count: 11, percentage: 14.86 },
-  { name: 'database', count: 9, percentage: 12.16 },
-  { name: 'notifications', count: 7, percentage: 9.46 },
-  { name: 'reports', count: 8, percentage: 10.81 }
+  { name: 'course', count: 3, percentage: 11.11 },
+  { name: 'banner', count: 1, percentage: 3.70 },
+  { name: 'matrix', count: 1, percentage: 3.70 },
+  { name: 'backlog', count: 3, percentage: 11.11 },
+  { name: 'voting', count: 9, percentage: 33.33 },
+  { name: 'billing', count: 1, percentage: 3.70 },
+  { name: 'alignment', count: 1, percentage: 3.70 },
+  { name: 'settings', count: 2, percentage: 7.41 },
+  { name: 'sync back', count: 2, percentage: 7.41 },
+  { name: 'notifications', count: 1, percentage: 3.70 },
+  { name: 'ui_components', count: 3, percentage: 11.11 }
 ]
 
 // Моковые данные для периода 3
@@ -104,9 +114,9 @@ const mockComponentDataPeriod3 = [
   { name: 'templates', count: 1, percentage: 3.13 },
   { name: 'users', count: 1, percentage: 3.13 },
   { name: 'settings', count: 1, percentage: 3.13 },
-  { name: 'sync_back', count: 1, percentage: 3.13 },
+  { name: 'sync back', count: 1, percentage: 3.13 },
   { name: 'filtration', count: 1, percentage: 3.13 },
-  { name: 'url', count: 1, percentage: 3.13 },
+  { name: 'links', count: 1, percentage: 3.13 },
   { name: 'noco', count: 1, percentage: 3.13 }
 ]
 
@@ -138,7 +148,7 @@ const mockComponentDataPeriod4 = [
   { name: 'voting', count: 4, percentage: 30.77 },
   { name: 'users', count: 1, percentage: 7.69 },
   { name: 'sync back', count: 1, percentage: 7.69 },
-  { name: 'url', count: 2, percentage: 15.38 }
+  { name: 'links', count: 2, percentage: 15.38 }
 ]
 
 // Моковые данные для периода 5 (04.08.2025 - 31.08.2025)
