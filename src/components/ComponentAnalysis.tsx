@@ -425,6 +425,7 @@ const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({ data, period, sel
                     <option value="period3">09.06.2025 - 06.07.2025</option>
                     <option value="period4">07.07.2025 - 03.08.2025</option>
                     <option value="period5">04.08.2025 - 31.08.2025</option>
+                    <option value="period6">01.09.2025 - 28.09.2025</option>
                   </select>
                 </div>
               )}
