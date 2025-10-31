@@ -66,6 +66,8 @@ const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({ data, period, sel
     { id: 'period3', label: '09.06.2025 - 06.07.2025', selected: false },
     { id: 'period4', label: '07.07.2025 - 03.08.2025', selected: false },
     { id: 'period5', label: '04.08.2025 - 31.08.2025', selected: false },
+    { id: 'period6', label: '01.09.2025 - 28.09.2025', selected: false },
+    { id: 'period7', label: '29.09.2025 - 26.10.2025', selected: false },
   ]);
 
   // Моковые данные для всех периодов (в реальном приложении это будет приходить из API)
@@ -141,6 +143,20 @@ const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({ data, period, sel
       { name: 'settings', count: 1, percentage: 4.17 },
       { name: 'ui_components', count: 2, percentage: 8.33 },
       { name: 'links', count: 1, percentage: 4.17 }
+    ],
+    period6: [
+      { name: 'workspace', count: 1, percentage: 14.29 },
+      { name: 'filters', count: 1, percentage: 14.29 },
+      { name: 'backlog', count: 1, percentage: 14.29 },
+      { name: 'voting (public 2)', count: 3, percentage: 42.86 },
+      { name: 'users', count: 1, percentage: 14.29 },
+    ],
+    period7: [
+      { name: 'backlog', count: 1, percentage: 20.00 },
+      { name: 'voting (public 1)', count: 1, percentage: 20.00 },
+      { name: 'sync back', count: 1, percentage: 20.00 },
+      { name: 'evaluation', count: 1, percentage: 20.00 },
+      { name: 'ui_components', count: 1, percentage: 20.00 },
     ]
   };
 
@@ -426,6 +442,7 @@ const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({ data, period, sel
                     <option value="period4">07.07.2025 - 03.08.2025</option>
                     <option value="period5">04.08.2025 - 31.08.2025</option>
                     <option value="period6">01.09.2025 - 28.09.2025</option>
+                    <option value="period7">29.09.2025 - 26.10.2025</option>
                   </select>
                 </div>
               )}

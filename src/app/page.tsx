@@ -299,9 +299,48 @@ const mockReasonsDataPeriod6 = [
   { reason: 'другое', count: 2, percentage: 28.57, color: 'rgba(201, 203, 207, 0.8)' },
 ];
 
+// Моковые данные для периода 7 (29.09.2025 - 26.10.2025)
+const mockSeverityDataPeriod7 = [
+  { label: 'blocker', count: 0, percentage: 0.00, color: 'rgba(220, 38, 127, 0.8)' },
+  { label: 'critical', count: 1, percentage: 33.33, color: 'rgba(255, 99, 132, 0.8)' },
+  { label: 'major', count: 1, percentage: 33.33, color: 'rgba(255, 159, 64, 0.8)' },
+  { label: 'minor', count: 0, percentage: 0.00, color: 'rgba(75, 192, 192, 0.8)' },
+  { label: 'trivial', count: 1, percentage: 33.33, color: 'rgba(201, 203, 207, 0.8)' },
+];
+
+const mockEnvironmentDataPeriod7 = [
+  { environment: 'prod', count: 3, percentage: 11.54, color: 'rgba(255, 99, 132, 0.8)' },
+  { environment: 'stage', count: 23, percentage: 88.46, color: 'rgba(75, 192, 192, 0.8)' },
+];
+
+const mockResolutionDataPeriod7 = [
+  { status: 'Done', count: 24, percentage: 92.31, color: 'rgba(75, 192, 192, 0.8)' },
+  { status: 'To Do', count: 2, percentage: 7.69, color: 'rgba(255, 159, 64, 0.8)' },
+];
+
+const mockComponentDataPeriod7 = [
+  { name: 'backlog', count: 1, percentage: 20.00 },
+  { name: 'voting (public 1)', count: 1, percentage: 20.00 },
+  { name: 'sync back', count: 1, percentage: 20.00 },
+  { name: 'evaluation', count: 1, percentage: 20.00 },
+  { name: 'ui_components', count: 1, percentage: 20.00 },
+]
+
+const mockTrackerDataPeriod7 = [
+  { name: 'Youtrack', count: 1, percentage: 100.00, color: 'rgba(255, 99, 132, 0.8)' },
+]
+
+const mockReasonsDataPeriod7 = [
+  { reason: 'специфический/редкий кейс', count: 0, percentage: 0.00, color: 'rgba(54, 162, 235, 0.8)' },
+  { reason: 'недоработка в требованиях', count: 0, percentage: 0.00, color: 'rgba(255, 99, 132, 0.8)' },
+  { reason: 'кейс не был предусмотрен', count: 0, percentage: 0.00, color: 'rgba(75, 192, 192, 0.8)' },
+  { reason: 'не проверялось на регрессе', count: 1, percentage: 50.00, color: 'rgba(255, 159, 64, 0.8)' },
+  { reason: 'другое', count: 1, percentage: 50.00, color: 'rgba(201, 203, 207, 0.8)' },
+];
+
 // Данные для покрытия тестами (объект, не массив!)
 const mockCoverageData = {
-  automated: 181,
+  automated: 224,
   total: 3680
 }
 
@@ -379,6 +418,15 @@ const getCurrentPeriodData = (period: string) => {
         component: mockComponentDataPeriod6,
         trackers: mockTrackerDataPeriod6,
         reasons: mockReasonsDataPeriod6
+      }
+    case 'period7':
+      return {
+        severity: mockSeverityDataPeriod7,
+        environment: mockEnvironmentDataPeriod7,
+        resolution: mockResolutionDataPeriod7,
+        component: mockComponentDataPeriod7,
+        trackers: mockTrackerDataPeriod7,
+        reasons: mockReasonsDataPeriod7
       }
     default:
       return {
