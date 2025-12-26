@@ -201,21 +201,11 @@ npm run update-data
 ```typescript
 {
   lastUpdated: string;          // Дата последнего обновления
-  jiraHost: string;             // URL Jira
   projectKey: string;           // Ключ проекта
   periods: PeriodConfig[];      // Список периодов
   components: string[];         // Список компонентов
   sprints: SprintData[];        // Данные спринтов для графика бэклога
-  visibility: {                 // Видимость секций
-    sprintBacklog: boolean;
-    environment: boolean;
-    resolution: boolean;
-    priority: boolean;
-    components: boolean;
-    trackers: boolean;
-    reasons: boolean;
-    testCoverage: boolean;
-  };
+  visibility: SectionVisibility; // Видимость секций
 }
 ```
 
@@ -234,7 +224,7 @@ npm run update-data
   components: MetricItem[];     // Компоненты (из бэклога)
   trackers: MetricItem[];       // Источники
   reasons: MetricItem[];        // Причины (из бэклога)
-  rawBugs: RawBug[];           // Сырые данные багов
+  rawBugs: RawBug[];            // Минимальные данные для фильтрации (environment, component)
 
   // Данные по багам, созданным в период
   totalBugsCreated: number;
