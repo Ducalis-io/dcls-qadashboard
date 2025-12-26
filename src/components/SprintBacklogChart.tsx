@@ -13,6 +13,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { getConfig } from '@/services/periodDataService';
+import InfoTooltip, { DATA_DESCRIPTIONS } from '@/components/InfoTooltip';
 
 // Регистрируем компоненты Chart.js
 ChartJS.register(
@@ -49,8 +50,11 @@ const SprintBacklogChart: React.FC<SprintBacklogChartProps> = ({ data: initialDa
   if (!sprintData || sprintData.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold text-red-800 mb-4">
+        <h2 className="text-xl font-semibold text-red-800 mb-4 flex items-center">
           Динамика багов в бэклоге по спринтам
+          <InfoTooltip title={DATA_DESCRIPTIONS.sprintBacklog.title}>
+            {DATA_DESCRIPTIONS.sprintBacklog.content}
+          </InfoTooltip>
         </h2>
         <div className="flex flex-col items-center justify-center h-64 text-gray-500">
           <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -144,8 +148,11 @@ const SprintBacklogChart: React.FC<SprintBacklogChartProps> = ({ data: initialDa
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-xl font-semibold text-red-800 mb-4">
+      <h2 className="text-xl font-semibold text-red-800 mb-4 flex items-center">
         Динамика багов в бэклоге по спринтам
+        <InfoTooltip title={DATA_DESCRIPTIONS.sprintBacklog.title}>
+          {DATA_DESCRIPTIONS.sprintBacklog.content}
+        </InfoTooltip>
       </h2>
       <div className="h-96">
         <Line data={chartData} options={options} />

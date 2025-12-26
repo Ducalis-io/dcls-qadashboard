@@ -6,6 +6,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { loadSheetData } from '@/services/dataService';
 import PeriodSelector from '@/components/PeriodSelector';
 import TrendChart from '@/components/TrendChart';
+import InfoTooltip, { DATA_DESCRIPTIONS } from '@/components/InfoTooltip';
 
 // ID таблицы из URL
 const SPREADSHEET_ID = '2PACX-1vSRuWLNT-ndzf4VP3VGl0YYYGBPY0hwtjCzsG9v8gMiIUvcq3C-UG9V9FEFMR6eUJCLiZkKCXfmgoor'; // Обновленный ID таблицы
@@ -398,7 +399,12 @@ const BugEnvironment: React.FC<BugEnvironmentProps> = ({ data: initialData, peri
       {/* Заголовок с дропдауном периода */}
       <div className="border-b border-gray-200 p-4">
         <div className="flex justify-between items-center">
-          <h3 className="text-xl font-semibold text-red-800">Распределение багов по окружениям</h3>
+          <h3 className="text-xl font-semibold text-red-800 flex items-center">
+            Распределение багов по окружениям
+            <InfoTooltip title={DATA_DESCRIPTIONS.environment.title}>
+              {DATA_DESCRIPTIONS.environment.content}
+            </InfoTooltip>
+          </h3>
           <div className="flex items-center space-x-2">
             {/* Переключатель Pie/Trend */}
             <div className="flex space-x-1">

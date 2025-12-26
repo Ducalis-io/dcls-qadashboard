@@ -4,6 +4,7 @@ import React from 'react';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import PeriodSelector from '@/components/PeriodSelector';
+import InfoTooltip, { DATA_DESCRIPTIONS } from '@/components/InfoTooltip';
 
 // Регистрация необходимых компонентов Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -48,7 +49,12 @@ const BugTrackers: React.FC<BugTrackersProps> = ({ data, selectedPeriod, onPerio
       {/* Заголовок с дропдауном */}
       <div className="border-b border-gray-200 p-4">
         <div className="flex justify-between items-center">
-          <h3 className="text-xl font-semibold text-red-800">Баги в трекерах</h3>
+          <h3 className="text-xl font-semibold text-red-800 flex items-center">
+            Баги в трекерах
+            <InfoTooltip title={DATA_DESCRIPTIONS.trackers.title}>
+              {DATA_DESCRIPTIONS.trackers.content}
+            </InfoTooltip>
+          </h3>
           {onPeriodChange && selectedPeriod && (
             <PeriodSelector
               selectedPeriod={selectedPeriod}

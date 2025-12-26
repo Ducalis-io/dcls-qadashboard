@@ -74,6 +74,27 @@ export interface PeriodData {
     createdDate: string;
     resolvedDate?: string;
   }>;
+  // Данные по багам, созданным в период (для компонентов и причин)
+  totalBugsCreated?: number;
+  componentsCreated?: Array<{
+    name: string;
+    count: number;
+    percentage: number;
+  }>;
+  reasonsCreated?: Array<{
+    reason: string;
+    count: number;
+    percentage: number;
+    color: string;
+  }>;
+  rawBugsCreated?: Array<{
+    key: string;
+    summary: string;
+    environment?: string;
+    component?: string;
+    status: string;
+    createdDate: string;
+  }>;
 }
 
 /**

@@ -110,12 +110,14 @@ export default function Home() {
               isActive={activeTab === 'details'}
               onClick={() => setActiveTab('details')}
             />
-            <TabButton
-              id="automation"
-              label="Автоматизация"
-              isActive={activeTab === 'automation'}
-              onClick={() => setActiveTab('automation')}
-            />
+            {config.visibility?.testCoverage !== false && (
+              <TabButton
+                id="automation"
+                label="Автоматизация"
+                isActive={activeTab === 'automation'}
+                onClick={() => setActiveTab('automation')}
+              />
+            )}
           </div>
         </div>
 
@@ -161,31 +163,34 @@ export default function Home() {
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-gray-800">Детальная информация</h2>
 
-            {/* Компоненты и трекеры - grid автоматически подстроится если один скрыт */}
-            {(config.visibility?.components !== false || config.visibility?.trackers !== false) && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {config.visibility?.components !== false && (
-                  <ComponentAnalysis
-                    data={currentData.components}
-                    period={config.periods.find(p => p.id === selectedPeriod)?.label || ''}
-                    selectedPeriod={selectedPeriod}
-                    onPeriodChange={setSelectedPeriod}
-                  />
-                )}
-                {config.visibility?.trackers !== false && (
-                  <BugTrackers
-                    data={currentData.trackers}
-                    selectedPeriod={selectedPeriod}
-                    onPeriodChange={setSelectedPeriod}
-                  />
-                )}
+            {/* Компоненты - на всю ширину если трекеры скрыты */}
+            {config.visibility?.components !== false && (
+              <div className="w-full">
+                <ComponentAnalysis
+                  data={currentData.componentsCreated || currentData.components}
+                  rawBugs={currentData.rawBugsCreated || currentData.rawBugs}
+                  period={config.periods.find(p => p.id === selectedPeriod)?.label || ''}
+                  selectedPeriod={selectedPeriod}
+                  onPeriodChange={setSelectedPeriod}
+                />
+              </div>
+            )}
+
+            {/* Трекеры - отдельно */}
+            {config.visibility?.trackers !== false && (
+              <div className="w-full">
+                <BugTrackers
+                  data={currentData.trackers}
+                  selectedPeriod={selectedPeriod}
+                  onPeriodChange={setSelectedPeriod}
+                />
               </div>
             )}
 
             {config.visibility?.reasons !== false && (
               <div className="w-full">
                 <BugReasons
-                  data={currentData.reasons}
+                  data={currentData.reasonsCreated || currentData.reasons}
                   selectedPeriod={selectedPeriod}
                   onPeriodChange={setSelectedPeriod}
                 />

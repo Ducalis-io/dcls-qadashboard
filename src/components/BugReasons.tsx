@@ -1,12 +1,47 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import PeriodSelector from '@/components/PeriodSelector';
 import TrendChart from '@/components/TrendChart';
+import InfoTooltip, { DATA_DESCRIPTIONS } from '@/components/InfoTooltip';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
+
+/**
+ * Генерирует уникальный цвет на основе строки (хеш)
+ */
+function generateColorFromString(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    hash = hash & hash;
+  }
+  const hue = Math.abs(hash) % 360;
+  const saturation = 65 + (Math.abs(hash >> 8) % 10);
+  const lightness = 55 + (Math.abs(hash >> 16) % 10);
+  return `hsla(${hue}, ${saturation}%, ${lightness}%, 0.8)`;
+}
+
+/**
+ * Проверяет, является ли цвет "серым" (unknown/другое)
+ */
+function isGrayColor(color: string): boolean {
+  return color.includes('128, 128, 128') ||
+         color.includes('201, 203, 207') ||
+         color.includes('169, 169, 169');
+}
+
+/**
+ * Получает цвет для причины - использует заданный или генерирует новый
+ */
+function getReasonColor(reason: string, originalColor: string): string {
+  if (isGrayColor(originalColor)) {
+    return generateColorFromString(reason);
+  }
+  return originalColor;
+}
 
 interface BugReasonData {
   reason: string;
@@ -24,12 +59,20 @@ interface BugReasonsProps {
 const BugReasons: React.FC<BugReasonsProps> = ({ data, selectedPeriod, onPeriodChange }) => {
   const [showTrend, setShowTrend] = useState(false);
 
+  // Генерируем уникальные цвета для каждой причины
+  const coloredData = useMemo(() => {
+    return data.map(item => ({
+      ...item,
+      color: getReasonColor(item.reason, item.color)
+    }));
+  }, [data]);
+
   const chartData = {
-    labels: data.map(item => item.reason),
+    labels: coloredData.map(item => item.reason),
     datasets: [{
-      data: data.map(item => item.count),
-      backgroundColor: data.map(item => item.color),
-      borderColor: data.map(item => item.color.replace('0.8', '1')),
+      data: coloredData.map(item => item.count),
+      backgroundColor: coloredData.map(item => item.color),
+      borderColor: coloredData.map(item => item.color.replace('0.8', '1')),
       borderWidth: 1,
     }],
   };
@@ -40,7 +83,12 @@ const BugReasons: React.FC<BugReasonsProps> = ({ data, selectedPeriod, onPeriodC
     <div className="bg-white rounded-lg shadow overflow-hidden h-full">
       <div className="border-b border-gray-200 p-4">
         <div className="flex justify-between items-center">
-          <h3 className="text-xl font-semibold text-red-800">Причины возникновения багов</h3>
+          <h3 className="text-xl font-semibold text-red-800 flex items-center">
+            Причины возникновения багов (созданные в период)
+            <InfoTooltip title={DATA_DESCRIPTIONS.reasons.title}>
+              {DATA_DESCRIPTIONS.reasons.content}
+            </InfoTooltip>
+          </h3>
           <div className="flex items-center space-x-2">
             <div className="flex space-x-1">
               <button
@@ -65,7 +113,7 @@ const BugReasons: React.FC<BugReasonsProps> = ({ data, selectedPeriod, onPeriodC
 
       {showTrend ? (
         <div className="p-6">
-          <TrendChart dataType="reasons" getLabelKey={(item) => item.reason} />
+          <TrendChart dataType="reasonsCreated" getLabelKey={(item) => item.reason} />
         </div>
       ) : (
         <>

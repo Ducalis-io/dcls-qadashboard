@@ -50,6 +50,38 @@ export const BUG_REASON_COLORS: Record<string, string> = {
   unknown: 'rgba(128, 128, 128, 0.8)',
 };
 
+/**
+ * Генерирует уникальный цвет на основе строки (хеш)
+ * Использует HSL для гарантированно различимых цветов
+ */
+export function generateColorFromString(str: string): string {
+  // Простой хеш строки
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    hash = hash & hash; // Convert to 32bit integer
+  }
+
+  // Генерируем HSL цвет с фиксированной насыщенностью и яркостью
+  // Hue: 0-360 (полный спектр)
+  // Saturation: 65-75% (достаточно насыщенный)
+  // Lightness: 55-65% (не слишком тёмный и не слишком светлый)
+  const hue = Math.abs(hash) % 360;
+  const saturation = 65 + (Math.abs(hash >> 8) % 10);
+  const lightness = 55 + (Math.abs(hash >> 16) % 10);
+
+  return `hsla(${hue}, ${saturation}%, ${lightness}%, 0.8)`;
+}
+
+/**
+ * Получить цвет для причины бага
+ * Если причина есть в словаре - возвращает заданный цвет
+ * Иначе генерирует уникальный цвет на основе названия
+ */
+export function getBugReasonColor(reason: string): string {
+  return BUG_REASON_COLORS[reason] || generateColorFromString(reason);
+}
+
 // Цвета для трекеров
 export const TRACKER_COLORS: Record<string, string> = {
   Jira: 'rgba(54, 162, 235, 0.8)',

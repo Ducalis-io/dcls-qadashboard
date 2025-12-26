@@ -152,6 +152,11 @@ export interface PeriodData {
   trackers: TrackerData[];
   reasons: ReasonData[];
   rawBugs: RawBug[];
+  // Данные по багам, созданным в период (для компонентов и причин)
+  totalBugsCreated?: number;
+  componentsCreated?: ComponentData[];
+  reasonsCreated?: ReasonData[];
+  rawBugsCreated?: RawBug[];
 }
 
 export interface SectionVisibility {

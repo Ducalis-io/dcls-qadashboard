@@ -15,8 +15,8 @@ import * as path from 'path';
 import * as dotenv from 'dotenv';
 import { JiraClient } from './jira/client';
 import { getJiraConfigFromEnv, createPeriodsFromSprints } from './jira/config';
-import { getBugsForPeriodJQL, getOpenBugsAtDateJQL } from './jira/queries';
-import { transformBugsToMetrics, extractSprintData } from './jira/transformers';
+import { getBugsForPeriodJQL, getOpenBugsAtDateJQL, getBugsInDateRangeJQL } from './jira/queries';
+import { transformBugsToMetrics, extractSprintData, extractComponentsAndReasons } from './jira/transformers';
 import type { PeriodConfig, DashboardConfig, PeriodData, SprintBugData, JiraSprint, SectionVisibility } from './jira/types';
 import { initLogger, getLogger, closeLogger } from './jira/logger';
 
@@ -264,15 +264,45 @@ async function main() {
       continue;
     }
 
-    // Трансформируем данные
-    logger.info(`   🔄 Обработка ${issues.length} багов...`);
+    // Трансформируем данные бэклога спринтов
+    logger.info(`   🔄 Обработка ${issues.length} багов бэклога...`);
     const transformStart = Date.now();
     const metrics = transformBugsToMetrics(issues, config.severityField, config.bugReasonField, config.environmentField, config.componentField);
     const transformTime = ((Date.now() - transformStart) / 1000).toFixed(1);
-    logger.info(`   ✓ Обработка завершена за ${transformTime}s`);
+    logger.info(`   ✓ Обработка бэклога завершена за ${transformTime}s`);
 
-    // Собираем все компоненты
+    // Собираем все компоненты (из бэклога)
     metrics.components.forEach((c) => allComponents.add(c.name));
+
+    // === ВТОРОЙ ЗАПРОС: Баги созданные в период (для компонентов и причин) ===
+    logger.info(`   🔍 Загрузка багов, созданных в период ${period.startDate} - ${period.endDate}...`);
+
+    // Задержка между запросами
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const createdJQL = getBugsInDateRangeJQL(config.projectKey, period.startDate, period.endDate);
+    logger.logJQL(createdJQL);
+
+    const createdStartTime = Date.now();
+    const createdIssues = await client.searchIssues(createdJQL);
+    const createdLoadTime = ((Date.now() - createdStartTime) / 1000).toFixed(1);
+
+    logger.info(`   ✓ Найдено ${createdIssues.length} багов созданных в период (${createdLoadTime}s)`);
+
+    // Извлекаем компоненты, причины и rawBugs из багов созданных в период
+    const createdMetrics = extractComponentsAndReasons(
+      createdIssues,
+      config.bugReasonField,
+      config.componentField,
+      config.environmentField
+    );
+
+    // Собираем все компоненты (из созданных)
+    createdMetrics.components.forEach((c) => allComponents.add(c.name));
+
+    logger.info(`   📊 Компоненты (созданные): ${createdMetrics.components.length} категорий`);
+    logger.info(`   📊 Причины (созданные): ${createdMetrics.reasons.length} категорий`);
+    logger.info(`   📊 Raw bugs (созданные): ${createdMetrics.rawBugs.length} записей`);
 
     // Сохраняем данные периода
     const periodData: PeriodData = {
@@ -281,6 +311,11 @@ async function main() {
       endDate: period.endDate,
       generatedAt: new Date().toISOString(),
       ...metrics,
+      // Добавляем данные по багам, созданным в период
+      totalBugsCreated: createdMetrics.total,
+      componentsCreated: createdMetrics.components,
+      reasonsCreated: createdMetrics.reasons,
+      rawBugsCreated: createdMetrics.rawBugs,
     };
 
     const periodFilePath = path.join(PERIODS_DIR, `${period.id}.json`);

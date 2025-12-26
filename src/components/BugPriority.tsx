@@ -5,6 +5,7 @@ import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import PeriodSelector from '@/components/PeriodSelector';
 import TrendChart from '@/components/TrendChart';
+import InfoTooltip, { DATA_DESCRIPTIONS } from '@/components/InfoTooltip';
 
 // Регистрация необходимых компонентов Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -56,7 +57,12 @@ const BugPriority: React.FC<BugPriorityProps> = ({
       {/* Заголовок с дропдауном */}
       <div className="border-b border-gray-200 p-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-red-800">Серьезность багов</h2>
+          <h2 className="text-xl font-semibold text-red-800 flex items-center">
+            Серьезность багов
+            <InfoTooltip title={DATA_DESCRIPTIONS.priority.title}>
+              {DATA_DESCRIPTIONS.priority.content}
+            </InfoTooltip>
+          </h2>
           <div className="flex items-center space-x-2">
             {/* Переключатель Pie/Trend */}
             <div className="flex space-x-1">

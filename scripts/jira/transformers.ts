@@ -9,12 +9,14 @@ import type {
   ReasonData,
   RawBug,
 } from './types';
+export type { ComponentData, ReasonData };
 import {
   SEVERITY_COLORS,
   ENVIRONMENT_COLORS,
   BUG_REASON_COLORS,
   TRACKER_COLORS,
   RESOLUTION_COLORS,
+  getBugReasonColor,
 } from './config';
 
 /**
@@ -166,7 +168,7 @@ export function transformBugsToMetrics(
     reason,
     count,
     percentage: total > 0 ? Number(((count / total) * 100).toFixed(2)) : 0,
-    color: BUG_REASON_COLORS[reason] || BUG_REASON_COLORS.unknown,
+    color: getBugReasonColor(reason),
   }));
 
   // 6. Trackers (пока заглушка, так как не ясно откуда брать)
@@ -240,6 +242,118 @@ export function transformBugsToMetrics(
     reasons,
     rawBugs,
   };
+}
+
+/**
+ * Извлекает компоненты, причины и rawBugs из массива issues
+ * Используется для багов, созданных в период (отдельно от бэклога спринтов)
+ */
+export function extractComponentsAndReasons(
+  issues: JiraIssue[],
+  bugReasonField: string,
+  componentField: string = '',
+  environmentField: string = 'environment'
+): { components: ComponentData[]; reasons: ReasonData[]; rawBugs: RawBug[]; total: number } {
+  const total = issues.length;
+
+  // Группировка по Components
+  const componentCounts = new Map<string, number>();
+  issues.forEach((issue) => {
+    let componentNames: string[] = [];
+
+    if (componentField) {
+      const customValue = issue.fields[componentField];
+      if (Array.isArray(customValue)) {
+        componentNames = customValue.map((v: any) =>
+          typeof v === 'string' ? v : (v?.value || v?.name || '')
+        ).filter(Boolean);
+      } else if (typeof customValue === 'object' && customValue !== null) {
+        componentNames = [(customValue as any).value || (customValue as any).name || ''];
+      } else if (typeof customValue === 'string' && customValue.trim()) {
+        componentNames = [customValue];
+      }
+    } else {
+      const components = issue.fields.components || [];
+      componentNames = components.map((c: any) => c.name).filter(Boolean);
+    }
+
+    if (componentNames.length === 0) {
+      componentCounts.set('no_component', (componentCounts.get('no_component') || 0) + 1);
+    } else {
+      componentNames.forEach((name) => {
+        componentCounts.set(name, (componentCounts.get(name) || 0) + 1);
+      });
+    }
+  });
+
+  const components: ComponentData[] = Array.from(componentCounts.entries())
+    .map(([name, count]) => ({
+      name,
+      count,
+      percentage: total > 0 ? Number(((count / total) * 100).toFixed(2)) : 0,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  // Группировка по Bug Reasons
+  const reasonCounts = new Map<string, number>();
+  issues.forEach((issue) => {
+    const reasonValue = issue.fields[bugReasonField];
+    let reason = 'другое';
+
+    if (typeof reasonValue === 'object' && reasonValue !== null) {
+      reason = (reasonValue as any).value || (reasonValue as any).name || 'другое';
+    } else if (typeof reasonValue === 'string') {
+      reason = reasonValue;
+    }
+
+    reasonCounts.set(reason, (reasonCounts.get(reason) || 0) + 1);
+  });
+
+  const reasons: ReasonData[] = Array.from(reasonCounts.entries()).map(([reason, count]) => ({
+    reason,
+    count,
+    percentage: total > 0 ? Number(((count / total) * 100).toFixed(2)) : 0,
+    color: getBugReasonColor(reason),
+  }));
+
+  // Raw bugs для фильтрации на фронтенде
+  const rawBugs: RawBug[] = issues.map((issue) => {
+    // Извлекаем environment
+    const envValue = issue.fields[environmentField] || issue.fields.environment;
+    let env = 'unknown';
+    if (typeof envValue === 'object' && envValue !== null) {
+      env = (envValue as any).value || (envValue as any).name || 'unknown';
+    } else if (typeof envValue === 'string' && envValue.trim()) {
+      env = envValue;
+    }
+
+    // Извлекаем component
+    let componentName = 'no_component';
+    if (componentField) {
+      const customValue = issue.fields[componentField];
+      if (Array.isArray(customValue) && customValue.length > 0) {
+        const first = customValue[0];
+        componentName = typeof first === 'string' ? first : (first?.value || first?.name || 'no_component');
+      } else if (typeof customValue === 'object' && customValue !== null) {
+        componentName = (customValue as any).value || (customValue as any).name || 'no_component';
+      } else if (typeof customValue === 'string' && customValue.trim()) {
+        componentName = customValue;
+      }
+    } else if (issue.fields.components?.[0]?.name) {
+      componentName = issue.fields.components[0].name;
+    }
+
+    return {
+      key: issue.key,
+      summary: issue.fields.summary,
+      environment: env.toLowerCase(),
+      component: componentName,
+      status: issue.fields.status?.name || 'unknown',
+      createdDate: issue.fields.created?.split('T')[0] || '',
+    };
+  });
+
+  return { components, reasons, rawBugs, total };
 }
 
 /**

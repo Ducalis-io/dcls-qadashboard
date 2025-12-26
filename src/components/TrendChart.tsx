@@ -34,7 +34,7 @@ export interface TrendDataItem {
 
 interface TrendChartProps {
   // Тип данных: какое поле брать из периода
-  dataType: 'severity' | 'environment' | 'resolution' | 'reasons';
+  dataType: 'severity' | 'environment' | 'resolution' | 'reasons' | 'reasonsCreated';
   // Функция для извлечения label из элемента данных
   getLabelKey: (item: any) => string;
 }
@@ -45,11 +45,20 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
   const config = useMemo(() => getConfig(), []);
   const allPeriodsData = useMemo(() => getAllPeriodsData(), []);
 
+  // Функция для получения данных из периода с учетом fallback
+  const getDataFromPeriod = (period: any, type: string): any[] => {
+    // Для reasonsCreated используем reasonsCreated с fallback на reasons
+    if (type === 'reasonsCreated') {
+      return period.reasonsCreated || period.reasons || [];
+    }
+    return period[type] || [];
+  };
+
   // Собираем все уникальные labels
   const allLabels = useMemo(() => {
     const labelSet = new Set<string>();
     allPeriodsData.forEach(period => {
-      const items = period[dataType] as any[];
+      const items = getDataFromPeriod(period, dataType);
       items?.forEach(item => {
         labelSet.add(getLabelKey(item));
       });
@@ -61,7 +70,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
   const labelColors = useMemo(() => {
     const colors: Record<string, string> = {};
     allPeriodsData.forEach(period => {
-      const items = period[dataType] as any[];
+      const items = getDataFromPeriod(period, dataType);
       items?.forEach(item => {
         const label = getLabelKey(item);
         if (!colors[label] && item.color) {
@@ -82,10 +91,31 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
       return `${day}.${month}`;
     }) || [];
 
+    // Функция для создания цвета заливки с нужной прозрачностью
+    const getFillColor = (color: string, opacity: number = 0.5): string => {
+      // Если цвет в формате rgba, заменяем opacity
+      if (color.startsWith('rgba')) {
+        return color.replace(/[\d.]+\)$/, `${opacity})`);
+      }
+      // Если цвет в формате hsla, заменяем opacity
+      if (color.startsWith('hsla')) {
+        return color.replace(/[\d.]+\)$/, `${opacity})`);
+      }
+      // Если цвет в формате rgb, конвертируем в rgba
+      if (color.startsWith('rgb(')) {
+        return color.replace('rgb(', 'rgba(').replace(')', `, ${opacity})`);
+      }
+      // Если цвет в формате hsl, конвертируем в hsla
+      if (color.startsWith('hsl(')) {
+        return color.replace('hsl(', 'hsla(').replace(')', `, ${opacity})`);
+      }
+      return color;
+    };
+
     // Datasets: один для каждого label
     const datasets = allLabels.map(label => {
       const data = allPeriodsData.map(period => {
-        const items = period[dataType] as any[];
+        const items = getDataFromPeriod(period, dataType);
         const item = items?.find(i => getLabelKey(i) === label);
 
         if (normalize) {
@@ -96,15 +126,18 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
         return item?.count || 0;
       });
 
+      const baseColor = labelColors[label] || 'rgba(128, 128, 128, 1)';
+
       return {
         label,
         data,
-        borderColor: labelColors[label] || 'rgba(128, 128, 128, 0.8)',
-        backgroundColor: labelColors[label]?.replace('0.8', '0.3') || 'rgba(128, 128, 128, 0.3)',
+        borderColor: baseColor,
+        backgroundColor: getFillColor(baseColor, 0.90), 
         fill: true,
         tension: 0.4,
-        pointRadius: 3,
-        pointHoverRadius: 5,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        borderWidth: 2,
       };
     });
 

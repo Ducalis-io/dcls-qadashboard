@@ -4,6 +4,7 @@ import React from 'react';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import PeriodSelector from '@/components/PeriodSelector';
+import InfoTooltip, { DATA_DESCRIPTIONS } from '@/components/InfoTooltip';
 
 // Регистрация необходимых компонентов Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -50,7 +51,12 @@ const TestCoverage: React.FC<TestCoverageProps> = ({ data, selectedPeriod, onPer
       {/* Заголовок с дропдауном */}
       <div className="border-b border-gray-200 p-4">
         <div className="flex justify-between items-center">
-          <h3 className="text-xl font-semibold text-red-800">Покрытие автотестами</h3>
+          <h3 className="text-xl font-semibold text-red-800 flex items-center">
+            Покрытие автотестами
+            <InfoTooltip title={DATA_DESCRIPTIONS.testCoverage.title}>
+              {DATA_DESCRIPTIONS.testCoverage.content}
+            </InfoTooltip>
+          </h3>
           {onPeriodChange && selectedPeriod && (
             <PeriodSelector
               selectedPeriod={selectedPeriod}

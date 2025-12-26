@@ -5,6 +5,7 @@ import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import PeriodSelector from '@/components/PeriodSelector';
 import TrendChart from '@/components/TrendChart';
+import InfoTooltip, { DATA_DESCRIPTIONS } from '@/components/InfoTooltip';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -40,7 +41,12 @@ const BugResolution: React.FC<BugResolutionProps> = ({ data, selectedPeriod, onP
     <div className="bg-white rounded-lg shadow overflow-hidden h-full">
       <div className="border-b border-gray-200 p-4">
         <div className="flex justify-between items-center">
-          <h3 className="text-xl font-semibold text-red-800">% исправленных дефектов</h3>
+          <h3 className="text-xl font-semibold text-red-800 flex items-center">
+            % исправленных дефектов
+            <InfoTooltip title={DATA_DESCRIPTIONS.resolution.title}>
+              {DATA_DESCRIPTIONS.resolution.content}
+            </InfoTooltip>
+          </h3>
           <div className="flex items-center space-x-2">
             <div className="flex space-x-1">
               <button
