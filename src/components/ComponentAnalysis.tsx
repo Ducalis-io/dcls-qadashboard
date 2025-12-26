@@ -9,7 +9,8 @@ import {
   BarElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  TooltipItem
 } from 'chart.js';
 import PeriodSelector from '@/components/PeriodSelector';
 import InfoTooltip, { DATA_DESCRIPTIONS } from '@/components/InfoTooltip';
@@ -49,7 +50,6 @@ type EnvironmentFilter = 'all' | 'prod' | 'stage';
 interface ComponentAnalysisProps {
   data: ComponentData[];
   rawBugs?: RawBug[];
-  period: string;
   selectedPeriod?: string;
   onPeriodChange?: (period: string) => void;
 }
@@ -57,7 +57,6 @@ interface ComponentAnalysisProps {
 const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({
   data,
   rawBugs,
-  period,
   selectedPeriod,
   onPeriodChange
 }) => {
@@ -213,7 +212,7 @@ const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({
       },
       tooltip: {
         callbacks: {
-          label: (context: any) => {
+          label: (context: TooltipItem<'bar'>) => {
             const value = context.raw as number;
             const percentage = totalBugs > 0 ? ((value / totalBugs) * 100).toFixed(1) : '0.0';
             return `Багов: ${value} (${percentage}%)`;

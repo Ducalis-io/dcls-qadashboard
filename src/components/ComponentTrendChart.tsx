@@ -11,6 +11,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  TooltipItem,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { getAllPeriodsData, getConfig } from '@/services/periodDataService';
@@ -73,7 +74,7 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
   };
 
   // Собираем все уникальные компоненты и определяем "значимые" (хотя бы в одном периоде > threshold)
-  const { significantComponents, componentColors, chartData } = useMemo(() => {
+  const { significantComponents, chartData } = useMemo(() => {
     // Сначала соберём все данные по компонентам для каждого периода
     const periodsComponentData: Array<{
       periodLabel: string;
@@ -88,7 +89,7 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
       const periodLabel = `${day}.${month}`;
 
       // Если есть фильтр по окружению, пересчитываем из rawBugsCreated
-      let componentMap = new Map<string, { count: number; percentage: number }>();
+      const componentMap = new Map<string, { count: number; percentage: number }>();
       let total = 0;
 
       if (envFilter !== 'all' && period.rawBugsCreated && period.rawBugsCreated.length > 0) {
@@ -236,7 +237,6 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
 
     return {
       significantComponents: significant,
-      componentColors: colors,
       chartData: {
         labels: periodLabels,
         datasets,
@@ -263,7 +263,7 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
         },
         tooltip: {
           callbacks: {
-            label: (context: any) => {
+            label: (context: TooltipItem<'line'>) => {
               const value = context.parsed.y;
               if (normalize) {
                 return `${context.dataset.label}: ${value.toFixed(1)}%`;

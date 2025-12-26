@@ -2,6 +2,9 @@
  * Сервис для загрузки данных периодов из JSON файлов
  */
 
+import { PeriodDataSchema, DashboardConfigSchema, ValidatedDashboardConfig } from '@/schemas/periodData';
+import configData from '@/data/config.json';
+
 export interface PeriodConfig {
   id: string;
   label: string;
@@ -10,18 +13,8 @@ export interface PeriodConfig {
   dataFile: string;
 }
 
-export interface DashboardConfig {
-  lastUpdated: string;
-  jiraHost: string;
-  projectKey: string;
-  periods: PeriodConfig[];
-  components: string[];
-  sprints: Array<{
-    sprint: string;
-    date: string;
-    backlogBugs: number;
-  }>;
-}
+// Используем тип напрямую из Zod схемы для избежания дублирования
+export type DashboardConfig = ValidatedDashboardConfig;
 
 export interface PeriodData {
   periodId: string;
@@ -102,9 +95,13 @@ export interface PeriodData {
  */
 export function getConfig(): DashboardConfig | null {
   try {
-    // В production это будет статически импортированный JSON
-    const config = require('@/data/config.json');
-    return config as DashboardConfig;
+    const result = DashboardConfigSchema.safeParse(configData);
+    if (!result.success) {
+      console.error('Invalid config data:', result.error.issues);
+      return configData as DashboardConfig;
+    }
+
+    return result.data as DashboardConfig;
   } catch (error) {
     console.error('Failed to load config:', error);
     return null;
@@ -133,8 +130,16 @@ export function getPeriodLabel(periodId: string): string {
  */
 export function getPeriodData(periodId: string): PeriodData | null {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const data = require(`@/data/periods/${periodId}.json`);
-    return data as PeriodData;
+
+    const result = PeriodDataSchema.safeParse(data);
+    if (!result.success) {
+      console.error(`Invalid period data for ${periodId}:`, result.error.issues);
+      return data;
+    }
+
+    return result.data as PeriodData;
   } catch (error) {
     console.error(`Failed to load period data for ${periodId}:`, error);
     return null;

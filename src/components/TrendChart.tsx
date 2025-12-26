@@ -11,9 +11,10 @@ import {
   Title,
   Tooltip,
   Legend,
+  TooltipItem,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { getAllPeriodsData, getConfig } from '@/services/periodDataService';
+import { getAllPeriodsData, getConfig, PeriodData } from '@/services/periodDataService';
 
 ChartJS.register(
   CategoryScale,
@@ -32,11 +33,14 @@ export interface TrendDataItem {
   color: string;
 }
 
+// Type for metric items that can have different fields
+type MetricDataItem = { label?: string; environment?: string; status?: string; reason?: string; count: number; color: string };
+
 interface TrendChartProps {
   // Тип данных: какое поле брать из периода
   dataType: 'severity' | 'environment' | 'resolution' | 'reasons' | 'reasonsCreated';
   // Функция для извлечения label из элемента данных
-  getLabelKey: (item: any) => string;
+  getLabelKey: (item: MetricDataItem) => string;
 }
 
 const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
@@ -46,12 +50,12 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
   const allPeriodsData = useMemo(() => getAllPeriodsData(), []);
 
   // Функция для получения данных из периода с учетом fallback
-  const getDataFromPeriod = (period: any, type: string): any[] => {
+  const getDataFromPeriod = (period: PeriodData, type: string): MetricDataItem[] => {
     // Для reasonsCreated используем reasonsCreated с fallback на reasons
     if (type === 'reasonsCreated') {
       return period.reasonsCreated || period.reasons || [];
     }
-    return period[type] || [];
+    return (period[type as keyof PeriodData] as MetricDataItem[] | undefined) || [];
   };
 
   // Собираем все уникальные labels
@@ -87,7 +91,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
     const periodLabels = config?.periods.map(p => {
       const endDate = p.endDate;
       // Формат: DD.MM
-      const [year, month, day] = endDate.split('-');
+      const [, month, day] = endDate.split('-');
       return `${day}.${month}`;
     }) || [];
 
@@ -165,7 +169,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
       },
       tooltip: {
         callbacks: {
-          label: (context: any) => {
+          label: (context: TooltipItem<'line'>) => {
             const value = context.parsed.y;
             if (normalize) {
               return `${context.dataset.label}: ${value.toFixed(1)}%`;

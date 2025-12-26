@@ -102,7 +102,7 @@ export const DATA_DESCRIPTIONS = {
           <strong>Источник:</strong> Исторический подсчёт открытых багов на дату завершения каждого спринта.
         </p>
         <p className="mb-2">
-          <strong>JQL:</strong> <code className="bg-gray-700 px-1 rounded text-xs">created &lt;= "дата" AND NOT status WAS IN ("Done") BEFORE "дата"</code>
+          <strong>JQL:</strong> <code className="bg-gray-700 px-1 rounded text-xs">created &lt;= &quot;дата&quot; AND NOT status WAS IN (&quot;Done&quot;) BEFORE &quot;дата&quot;</code>
         </p>
         <p className="text-yellow-200 text-xs">
           Показывает сколько багов было открыто (не закрыто) в бэклоге на момент завершения спринта.
@@ -170,7 +170,7 @@ export const DATA_DESCRIPTIONS = {
           <strong>Источник:</strong> Баги, созданные в даты периода.
         </p>
         <p className="mb-2">
-          <strong>JQL:</strong> <code className="bg-gray-700 px-1 rounded text-xs">created &gt;= "начало" AND created &lt;= "конец"</code>
+          <strong>JQL:</strong> <code className="bg-gray-700 px-1 rounded text-xs">created &gt;= &quot;начало&quot; AND created &lt;= &quot;конец&quot;</code>
         </p>
         <p className="mb-2 text-green-300 text-xs">
           <strong>Фильтр Prod:</strong> Показывает какие компоненты пропустили баги на прод (баги найденные на проде).
@@ -190,7 +190,7 @@ export const DATA_DESCRIPTIONS = {
           <strong>Источник:</strong> Баги, созданные в даты периода.
         </p>
         <p className="mb-2">
-          <strong>JQL:</strong> <code className="bg-gray-700 px-1 rounded text-xs">created &gt;= "начало" AND created &lt;= "конец"</code>
+          <strong>JQL:</strong> <code className="bg-gray-700 px-1 rounded text-xs">created &gt;= &quot;начало&quot; AND created &lt;= &quot;конец&quot;</code>
         </p>
         <p className="text-yellow-200 text-xs">
           Анализ причин возникновения багов (ошибка в коде, недоработка в требованиях и т.д.) по багам созданным в период.

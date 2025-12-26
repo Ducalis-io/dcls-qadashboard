@@ -9,7 +9,8 @@ import {
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  TooltipItem
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { getConfig } from '@/services/periodDataService';
@@ -29,19 +30,18 @@ ChartJS.register(
 // Интерфейс для данных о спринтах
 interface SprintData {
   sprint: string;
-  startDate?: string;
-  endDate?: string;
-  date?: string; // для обратной совместимости
+  sprintId: number;
+  startDate: string;
+  endDate: string;
   backlogBugs: number;
 }
 
 // Интерфейс для пропсов компонента
 interface SprintBacklogChartProps {
   data?: SprintData[];
-  period?: string;
 }
 
-const SprintBacklogChart: React.FC<SprintBacklogChartProps> = ({ data: initialData, period }) => {
+const SprintBacklogChart: React.FC<SprintBacklogChartProps> = ({ data: initialData }) => {
   // Загружаем конфигурацию и данные спринтов
   const config = useMemo(() => getConfig(), []);
   const sprintData = initialData || config?.sprints || [];
@@ -81,8 +81,7 @@ const SprintBacklogChart: React.FC<SprintBacklogChartProps> = ({ data: initialDa
   // Подготовка данных для графика
   const chartData = {
     labels: sprintData.map(item => {
-      const date = item.endDate || item.date || '';
-      return `${item.sprint}\n${date}`;
+      return `${item.sprint}\n${item.endDate}`;
     }),
     datasets: [
       {
@@ -112,13 +111,12 @@ const SprintBacklogChart: React.FC<SprintBacklogChartProps> = ({ data: initialDa
       },
       tooltip: {
         callbacks: {
-          title: (context: any) => {
+          title: (context: TooltipItem<'line'>[]) => {
             const index = context[0].dataIndex;
             const item = sprintData[index];
-            const date = item.endDate || item.date || '';
-            return `${item.sprint} (${date})`;
+            return `${item.sprint} (${item.endDate})`;
           },
-          label: (context: any) => {
+          label: (context: TooltipItem<'line'>) => {
             return `Баги в бэклоге: ${context.parsed.y}`;
           },
         },
@@ -161,7 +159,7 @@ const SprintBacklogChart: React.FC<SprintBacklogChartProps> = ({ data: initialDa
         <p>Всего спринтов: {sprintData.length}</p>
         {sprintData.length > 0 && (
           <p>
-            Период: {sprintData[0].endDate || sprintData[0].date} - {sprintData[sprintData.length - 1].endDate || sprintData[sprintData.length - 1].date}
+            Период: {sprintData[0].endDate} - {sprintData[sprintData.length - 1].endDate}
           </p>
         )}
       </div>

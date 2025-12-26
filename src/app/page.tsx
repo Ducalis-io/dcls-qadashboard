@@ -1,16 +1,11 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import BugEnvironment from '@/components/BugEnvironment'
-import BugPriority from '@/components/BugPriority'
-import BugResolution from '@/components/BugResolution'
+import { SeverityCard, EnvironmentCard, ResolutionCard, TrackersCard, ReasonsCard } from '@/components/metrics'
 import ComponentAnalysis from '@/components/ComponentAnalysis'
-import BugTrackers from '@/components/BugTrackers'
 import TestCoverage from '@/components/TestCoverage'
 import SprintBacklogChart from '@/components/SprintBacklogChart'
-import BugReasons from '@/components/BugReasons'
-import BugStatistics from '@/components/BugStatistics'
-import BugTrends from '@/components/BugTrends'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import { getConfig, getPeriodData } from '@/services/periodDataService'
 
 // Данные для покрытия тестами (пока статичные, можно добавить в JSON позже)
@@ -39,8 +34,7 @@ export default function Home() {
   }, [selectedPeriod])
 
   // Компонент для вкладок
-  const TabButton = ({ id, label, isActive, onClick }: {
-    id: string
+  const TabButton = ({ label, isActive, onClick }: {
     label: string
     isActive: boolean
     onClick: () => void
@@ -99,20 +93,17 @@ export default function Home() {
         <div className="mb-6">
           <div className="flex space-x-1 border-b">
             <TabButton
-              id="overview"
               label="Обзор"
               isActive={activeTab === 'overview'}
               onClick={() => setActiveTab('overview')}
             />
             <TabButton
-              id="details"
               label="Детали"
               isActive={activeTab === 'details'}
               onClick={() => setActiveTab('details')}
             />
             {config.visibility?.testCoverage !== false && (
               <TabButton
-                id="automation"
                 label="Автоматизация"
                 isActive={activeTab === 'automation'}
                 onClick={() => setActiveTab('automation')}
@@ -134,26 +125,31 @@ export default function Home() {
             {/* Основные метрики - по 2 в ряд максимум */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {config.visibility?.environment !== false && (
-                <BugEnvironment
-                  data={currentData.environment}
-                  period={config.periods.find(p => p.id === selectedPeriod)?.label || ''}
-                  selectedPeriod={selectedPeriod}
-                  onPeriodChange={setSelectedPeriod}
-                />
+                <ErrorBoundary title="Распределение багов по окружениям">
+                  <EnvironmentCard
+                    data={currentData.environment}
+                    selectedPeriod={selectedPeriod}
+                    onPeriodChange={setSelectedPeriod}
+                  />
+                </ErrorBoundary>
               )}
               {config.visibility?.resolution !== false && (
-                <BugResolution
-                  data={currentData.resolution}
-                  selectedPeriod={selectedPeriod}
-                  onPeriodChange={setSelectedPeriod}
-                />
+                <ErrorBoundary title="Статус резолюции багов">
+                  <ResolutionCard
+                    data={currentData.resolution}
+                    selectedPeriod={selectedPeriod}
+                    onPeriodChange={setSelectedPeriod}
+                  />
+                </ErrorBoundary>
               )}
               {config.visibility?.priority !== false && (
-                <BugPriority
-                  data={currentData.severity}
-                  selectedPeriod={selectedPeriod}
-                  onPeriodChange={setSelectedPeriod}
-                />
+                <ErrorBoundary title="Серьёзность багов">
+                  <SeverityCard
+                    data={currentData.severity}
+                    selectedPeriod={selectedPeriod}
+                    onPeriodChange={setSelectedPeriod}
+                  />
+                </ErrorBoundary>
               )}
             </div>
           </div>
@@ -166,34 +162,39 @@ export default function Home() {
             {/* Компоненты - на всю ширину если трекеры скрыты */}
             {config.visibility?.components !== false && (
               <div className="w-full">
-                <ComponentAnalysis
-                  data={currentData.componentsCreated || currentData.components}
-                  rawBugs={currentData.rawBugsCreated || currentData.rawBugs}
-                  period={config.periods.find(p => p.id === selectedPeriod)?.label || ''}
-                  selectedPeriod={selectedPeriod}
-                  onPeriodChange={setSelectedPeriod}
-                />
+                <ErrorBoundary title="Анализ компонентов">
+                  <ComponentAnalysis
+                    data={currentData.componentsCreated || currentData.components}
+                    rawBugs={currentData.rawBugsCreated || currentData.rawBugs}
+                    selectedPeriod={selectedPeriod}
+                    onPeriodChange={setSelectedPeriod}
+                  />
+                </ErrorBoundary>
               </div>
             )}
 
             {/* Трекеры - отдельно */}
             {config.visibility?.trackers !== false && (
               <div className="w-full">
-                <BugTrackers
-                  data={currentData.trackers}
-                  selectedPeriod={selectedPeriod}
-                  onPeriodChange={setSelectedPeriod}
-                />
+                <ErrorBoundary title="Трекеры багов">
+                  <TrackersCard
+                    data={currentData.trackers}
+                    selectedPeriod={selectedPeriod}
+                    onPeriodChange={setSelectedPeriod}
+                  />
+                </ErrorBoundary>
               </div>
             )}
 
             {config.visibility?.reasons !== false && (
               <div className="w-full">
-                <BugReasons
-                  data={currentData.reasonsCreated || currentData.reasons}
-                  selectedPeriod={selectedPeriod}
-                  onPeriodChange={setSelectedPeriod}
-                />
+                <ErrorBoundary title="Причины создания багов">
+                  <ReasonsCard
+                    data={currentData.reasonsCreated || currentData.reasons}
+                    selectedPeriod={selectedPeriod}
+                    onPeriodChange={setSelectedPeriod}
+                  />
+                </ErrorBoundary>
               </div>
             )}
           </div>
