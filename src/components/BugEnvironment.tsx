@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { loadSheetData } from '@/services/dataService';
+import PeriodSelector from '@/components/PeriodSelector';
+import TrendChart from '@/components/TrendChart';
 
 // ID таблицы из URL
 const SPREADSHEET_ID = '2PACX-1vSRuWLNT-ndzf4VP3VGl0YYYGBPY0hwtjCzsG9v8gMiIUvcq3C-UG9V9FEFMR6eUJCLiZkKCXfmgoor'; // Обновленный ID таблицы
@@ -38,6 +40,7 @@ const BugEnvironment: React.FC<BugEnvironmentProps> = ({ data: initialData, peri
   const [data, setData] = useState<EnvironmentData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [showTrend, setShowTrend] = useState<boolean>(false);
 
   // Загрузка данных при монтировании компонента
   useEffect(() => {
@@ -396,103 +399,123 @@ const BugEnvironment: React.FC<BugEnvironmentProps> = ({ data: initialData, peri
       <div className="border-b border-gray-200 p-4">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-semibold text-red-800">Распределение багов по окружениям</h3>
-          {onPeriodChange && (
-            <select 
-              value={selectedPeriod} 
-              onChange={(e) => onPeriodChange(e.target.value)}
-              className="border border-gray-300 rounded px-3 py-1 text-sm"
-            >
-              <option value="period1">03.02.2025 - 13.04.2025</option>
-              <option value="period2">13.04.2025 - 08.06.2025</option>
-              <option value="period3">09.06.2025 - 06.07.2025</option>
-              <option value="period4">07.07.2025 - 03.08.2025</option>
-              <option value="period5">04.08.2025 - 31.08.2025</option>
-              <option value="period6">01.09.2025 - 28.09.2025</option>
-              <option value="period7">29.09.2025 - 26.10.2025</option>
-            </select>
-          )}
+          <div className="flex items-center space-x-2">
+            {/* Переключатель Pie/Trend */}
+            <div className="flex space-x-1">
+              <button
+                onClick={() => setShowTrend(false)}
+                className={`px-2 py-1 text-xs rounded ${!showTrend ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+              >
+                Pie
+              </button>
+              <button
+                onClick={() => setShowTrend(true)}
+                className={`px-2 py-1 text-xs rounded ${showTrend ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+              >
+                Trend
+              </button>
+            </div>
+            {onPeriodChange && selectedPeriod && !showTrend && (
+              <PeriodSelector
+                selectedPeriod={selectedPeriod}
+                onPeriodChange={onPeriodChange}
+              />
+            )}
+          </div>
         </div>
       </div>
       
-      {/* Круговая диаграмма - теперь идет первой */}
-      <div className="p-6">
-        <div className="w-full max-w-md mx-auto h-64 relative">
-          <Pie 
-            data={chartData} 
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: {
-                  position: 'right',
-                  labels: {
-                    boxWidth: 15,
-                    padding: 15,
-                    font: {
-                      size: 12
-                    }
-                  }
-                },
-                tooltip: {
-                  callbacks: {
-                    label: function(context) {
-                      const label = context.label || '';
-                      const value = context.raw as number;
-                      const percentage = data[context.dataIndex]?.percentage.toFixed(2) || '0';
-                      return `${label}: ${value} (${percentage}%)`;
-                    }
-                  }
-                }
-              }
-            }}
+      {/* Trend Chart */}
+      {showTrend ? (
+        <div className="p-6">
+          <TrendChart
+            dataType="environment"
+            getLabelKey={(item) => item.environment}
           />
         </div>
-      </div>
-      
-      {/* Таблица данных - теперь идет второй */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                %
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {data.map((item, index) => (
-              <tr key={index} className="bg-yellow-50">
-                <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {item.environment}
-                </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-center">
-                  {item.count}
-                </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-center">
-                  {item.percentage.toFixed(2)}
-                </td>
-              </tr>
-            ))}
-            <tr className="bg-yellow-100">
-              <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                Total
-              </td>
-              <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-center">
-                {totalBugs}
-              </td>
-              <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
-                
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      ) : (
+        <>
+          {/* Круговая диаграмма */}
+          <div className="p-6">
+            <div className="w-full max-w-md mx-auto h-64 relative">
+              <Pie
+                data={chartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'right',
+                      labels: {
+                        boxWidth: 15,
+                        padding: 15,
+                        font: {
+                          size: 12
+                        }
+                      }
+                    },
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          const label = context.label || '';
+                          const value = context.raw as number;
+                          const percentage = data[context.dataIndex]?.percentage.toFixed(2) || '0';
+                          return `${label}: ${value} (${percentage}%)`;
+                        }
+                      }
+                    }
+                  }
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Таблица данных */}
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    %
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {data.map((item, index) => (
+                  <tr key={index} className="bg-yellow-50">
+                    <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {item.environment}
+                    </td>
+                    <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-center">
+                      {item.count}
+                    </td>
+                    <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-center">
+                      {item.percentage.toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-yellow-100">
+                  <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                    Total
+                  </td>
+                  <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-center">
+                    {totalBugs}
+                  </td>
+                  <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </div>
   );
 };

@@ -3,6 +3,7 @@
 import React from 'react';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import PeriodSelector from '@/components/PeriodSelector';
 
 // Регистрация необходимых компонентов Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -48,20 +49,11 @@ const BugTrackers: React.FC<BugTrackersProps> = ({ data, selectedPeriod, onPerio
       <div className="border-b border-gray-200 p-4">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-semibold text-red-800">Баги в трекерах</h3>
-          {onPeriodChange && (
-            <select 
-              value={selectedPeriod} 
-              onChange={(e) => onPeriodChange(e.target.value)}
-              className="border border-gray-300 rounded px-3 py-1 text-sm"
-            >
-              <option value="period1">03.02.2025 - 13.04.2025</option>
-              <option value="period2">13.04.2025 - 08.06.2025</option>
-              <option value="period3">09.06.2025 - 06.07.2025</option>
-              <option value="period4">07.07.2025 - 03.08.2025</option>
-              <option value="period5">04.08.2025 - 31.08.2025</option>
-              <option value="period6">01.09.2025 - 28.09.2025</option>
-              <option value="period7">29.09.2025 - 26.10.2025</option>
-            </select>
+          {onPeriodChange && selectedPeriod && (
+            <PeriodSelector
+              selectedPeriod={selectedPeriod}
+              onPeriodChange={onPeriodChange}
+            />
           )}
         </div>
       </div>

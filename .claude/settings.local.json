@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "WebSearch",
+      "WebFetch(domain:developer.atlassian.com)",
+      "Bash(dir \"I:\\\\QA_PrioPlan_Ducalis\\\\GIT\\\\Bug_analytics\\\\dcls-qadashboard\\\\logs\\\\responses\" /b)",
+      "Bash(findstr:*)"
+    ]
+  }
+}
