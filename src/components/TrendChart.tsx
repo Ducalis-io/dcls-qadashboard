@@ -168,6 +168,8 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
         },
       },
       tooltip: {
+        // Сортировка элементов тултипа по убыванию значения (совпадает с визуальным порядком графиков)
+        itemSort: (a: TooltipItem<'line'>, b: TooltipItem<'line'>) => b.parsed.y - a.parsed.y,
         callbacks: {
           label: (context: TooltipItem<'line'>) => {
             const value = context.parsed.y;

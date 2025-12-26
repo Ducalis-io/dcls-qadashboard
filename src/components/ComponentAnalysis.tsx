@@ -33,14 +33,13 @@ interface ComponentData {
   percentage: number;
 }
 
-// Интерфейс для сырых багов
+/**
+ * Минимальный набор данных о баге для фильтрации.
+ * Удалены: key, summary, status, createdDate (чувствительные данные)
+ */
 interface RawBug {
-  key: string;
-  summary: string;
   environment?: string;
   component?: string;
-  status: string;
-  createdDate: string;
 }
 
 // Тип фильтра окружения

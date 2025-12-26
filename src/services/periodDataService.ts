@@ -57,15 +57,11 @@ export interface PeriodData {
     percentage: number;
     color: string;
   }>;
+  // Минимальный набор для фильтрации на фронтенде
+  // Удалены: key, summary, severity, status, createdDate, resolvedDate
   rawBugs: Array<{
-    key: string;
-    summary: string;
-    severity?: string;
     environment?: string;
     component?: string;
-    status: string;
-    createdDate: string;
-    resolvedDate?: string;
   }>;
   // Данные по багам, созданным в период (для компонентов и причин)
   totalBugsCreated?: number;
@@ -80,13 +76,10 @@ export interface PeriodData {
     percentage: number;
     color: string;
   }>;
+  // Минимальный набор для фильтрации на фронтенде
   rawBugsCreated?: Array<{
-    key: string;
-    summary: string;
     environment?: string;
     component?: string;
-    status: string;
-    createdDate: string;
   }>;
 }
 

@@ -119,7 +119,7 @@ export interface ReasonData {
 
 export interface SprintBugData {
   sprint: string;
-  sprintId: number;
+  // sprintId removed - not used on frontend, was Jira internal ID
   startDate: string;
   endDate: string;
   backlogBugs: number;
@@ -127,16 +127,21 @@ export interface SprintBugData {
   totalOpenBugs?: number;
 }
 
+/**
+ * Минимальный набор данных о баге для фронтенда (фильтрация по окружению/компоненту).
+ *
+ * Удалены чувствительные поля для публичного деплоя:
+ * - key: string           // Jira issue key (e.g., "PROJ-123")
+ * - summary: string       // Issue title
+ * - severity?: string     // Bug severity
+ * - status: string        // Issue status
+ * - createdDate: string   // Creation date
+ * - resolvedDate?: string // Resolution date
+ * - sprintName?: string   // Sprint name
+ */
 export interface RawBug {
-  key: string;
-  summary: string;
-  severity?: string;
   environment?: string;
   component?: string;
-  status: string;
-  createdDate: string;
-  resolvedDate?: string;
-  sprintName?: string;
 }
 
 export interface PeriodData {
@@ -172,7 +177,7 @@ export interface SectionVisibility {
 
 export interface DashboardConfig {
   lastUpdated: string;
-  jiraHost: string;
+  // jiraHost removed - sensitive info, not used on frontend
   projectKey: string;
   periods: Array<{
     id: string;

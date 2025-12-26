@@ -28,9 +28,9 @@ ChartJS.register(
 );
 
 // Интерфейс для данных о спринтах
+// sprintId removed - not used on frontend
 interface SprintData {
   sprint: string;
-  sprintId: number;
   startDate: string;
   endDate: string;
   backlogBugs: number;

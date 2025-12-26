@@ -182,19 +182,10 @@ export function transformBugsToMetrics(
     },
   ];
 
-  // 7. Raw bugs для reference
+  // 7. Raw bugs - минимальный набор для фильтрации на фронтенде
+  // Удалены чувствительные поля: key, summary, severity, status, createdDate, resolvedDate
+  // При необходимости восстановить - см. RawBug interface в types.ts
   const rawBugs: RawBug[] = issues.map((issue) => {
-    const severityValue = issue.fields[severityField];
-    let severity = 'unknown';
-
-    if (typeof severityValue === 'object' && severityValue !== null) {
-      severity = (severityValue as any).value || (severityValue as any).name || 'unknown';
-    } else if (typeof severityValue === 'string') {
-      severity = severityValue;
-    } else if (issue.fields.priority?.name) {
-      severity = issue.fields.priority.name;
-    }
-
     // Извлекаем environment из указанного поля
     const envValue = issue.fields[environmentField] || issue.fields.environment;
     let env = 'unknown';
@@ -221,14 +212,8 @@ export function transformBugsToMetrics(
     }
 
     return {
-      key: issue.key,
-      summary: issue.fields.summary,
-      severity: severity.toLowerCase(),
       environment: env.toLowerCase(),
       component: componentName,
-      status: issue.fields.status?.name || 'unknown',
-      createdDate: issue.fields.created?.split('T')[0] || '',
-      resolvedDate: issue.fields.resolutiondate?.split('T')[0],
     };
   });
 
@@ -316,7 +301,9 @@ export function extractComponentsAndReasons(
     color: getBugReasonColor(reason),
   }));
 
-  // Raw bugs для фильтрации на фронтенде
+  // Raw bugs - минимальный набор для фильтрации на фронтенде
+  // Удалены чувствительные поля: key, summary, status, createdDate
+  // При необходимости восстановить - см. RawBug interface в types.ts
   const rawBugs: RawBug[] = issues.map((issue) => {
     // Извлекаем environment
     const envValue = issue.fields[environmentField] || issue.fields.environment;
@@ -344,12 +331,8 @@ export function extractComponentsAndReasons(
     }
 
     return {
-      key: issue.key,
-      summary: issue.fields.summary,
       environment: env.toLowerCase(),
       component: componentName,
-      status: issue.fields.status?.name || 'unknown',
-      createdDate: issue.fields.created?.split('T')[0] || '',
     };
   });
 

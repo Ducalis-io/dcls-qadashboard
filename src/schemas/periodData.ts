@@ -11,15 +11,20 @@ export const MetricItemSchema = z.object({
   color: z.string().optional(),
 });
 
+/**
+ * Минимальный набор данных о баге для фильтрации на фронтенде.
+ *
+ * Удалены чувствительные поля для публичного деплоя:
+ * - key: z.string()              // Jira issue key
+ * - summary: z.string()          // Issue title
+ * - severity: z.string().optional()
+ * - status: z.string()
+ * - createdDate: z.string()
+ * - resolvedDate: z.string().optional()
+ */
 export const RawBugSchema = z.object({
-  key: z.string(),
-  summary: z.string(),
-  severity: z.string().optional(),
   environment: z.string().optional(),
   component: z.string().optional(),
-  status: z.string(),
-  createdDate: z.string(),
-  resolvedDate: z.string().optional(),
 });
 
 export const PeriodDataSchema = z.object({
@@ -51,13 +56,13 @@ export const PeriodConfigSchema = z.object({
 
 export const DashboardConfigSchema = z.object({
   lastUpdated: z.string(),
-  jiraHost: z.string(),
+  // jiraHost removed - sensitive info, not used on frontend
   projectKey: z.string(),
   periods: z.array(PeriodConfigSchema),
   components: z.array(z.string()),
   sprints: z.array(z.object({
     sprint: z.string(),
-    sprintId: z.number(),
+    // sprintId removed - not used on frontend
     startDate: z.string(),
     endDate: z.string(),
     backlogBugs: z.number(),

@@ -42,3 +42,8 @@ next-env.d.ts
 
 # logs
 /logs
+
+# Ohter
+/.Legacy
+
+.claude

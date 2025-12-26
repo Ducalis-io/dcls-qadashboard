@@ -79,7 +79,7 @@ async function collectSprintBacklogData(
 
       sprintData.push({
         sprint: sprint.name,
-        sprintId: sprint.id,
+        // sprintId removed - not used on frontend
         startDate: sprint.startDate?.split('T')[0] || '',
         endDate: sprint.endDate?.split('T')[0] || '',
         backlogBugs: backlogCount,
@@ -402,7 +402,7 @@ async function main() {
 
   const dashboardConfig: DashboardConfig = {
     lastUpdated: new Date().toISOString(),
-    jiraHost: config.host,
+    // jiraHost removed - sensitive info, not used on frontend
     projectKey: config.projectKey,
     periods: periods.map((p) => ({
       id: p.id,
