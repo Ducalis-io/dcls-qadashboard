@@ -9,7 +9,7 @@
 - **Tailwind CSS 4**
 - **Chart.js** + react-chartjs-2
 - **Zod** для валидации данных
-- **Jira REST API** для сбора данных
+- **Cloudflare KV** для хранения данных (опционально)
 
 ## Быстрый старт
 
@@ -19,7 +19,7 @@ npm install
 
 # Настройка переменных окружения
 cp .env.example .env.local
-# Отредактируйте .env.local с вашими Jira credentials
+# Отредактируйте .env.local
 
 # Сбор данных из Jira
 npm run fetch-jira
@@ -29,6 +29,21 @@ npm run dev
 ```
 
 Приложение будет доступно по адресу http://localhost:3000
+
+## Режимы работы
+
+Дашборд поддерживает два источника данных:
+
+| Режим | Описание | Когда использовать |
+|-------|----------|-------------------|
+| `local` | Данные из `src/data/` | Разработка, простой деплой |
+| `cloudflare` | Данные из Cloudflare KV API | Продакшен без git push данных |
+
+Настройка в `.env.local`:
+```env
+DATA_SOURCE=local                    # или cloudflare
+NEXT_PUBLIC_API_URL=https://...      # URL Worker'а (для cloudflare)
+```
 
 ## Структура проекта
 
@@ -42,68 +57,51 @@ dcls-qadashboard/
 │   ├── components/
 │   │   ├── ui/                   # Базовые UI компоненты (переиспользуемые)
 │   │   │   ├── MetricCard.tsx    # Универсальная карточка метрики
-│   │   │   ├── MetricCardHeader.tsx
 │   │   │   ├── MetricPieChart.tsx
 │   │   │   ├── MetricTable.tsx
-│   │   │   ├── ChartModeToggle.tsx
-│   │   │   ├── EnvironmentFilter.tsx
-│   │   │   ├── EmptyState.tsx
-│   │   │   └── index.ts
+│   │   │   └── ...
 │   │   │
 │   │   ├── metrics/              # Специализированные карточки метрик
 │   │   │   ├── SeverityCard.tsx
 │   │   │   ├── EnvironmentCard.tsx
-│   │   │   ├── ResolutionCard.tsx
-│   │   │   ├── TrackersCard.tsx
-│   │   │   ├── ReasonsCard.tsx
-│   │   │   └── index.ts
+│   │   │   └── ...
 │   │   │
-│   │   ├── ComponentAnalysis.tsx # Анализ компонентов с фильтром по окружению
-│   │   ├── ComponentTrendChart.tsx
+│   │   ├── ComponentAnalysis.tsx
 │   │   ├── SprintBacklogChart.tsx
-│   │   ├── TrendChart.tsx
-│   │   ├── ErrorBoundary.tsx     # Изоляция ошибок
-│   │   ├── InfoTooltip.tsx
-│   │   └── PeriodSelector.tsx
+│   │   └── ErrorBoundary.tsx
+│   │
+│   ├── hooks/
+│   │   └── useDataSource.ts      # Хук загрузки данных (local/cloudflare)
 │   │
 │   ├── services/
-│   │   └── periodDataService.ts  # Сервис загрузки данных с Zod валидацией
+│   │   └── periodDataService.ts  # Сервис загрузки данных
 │   │
 │   ├── schemas/
-│   │   └── periodData.ts         # Zod схемы для валидации данных
+│   │   └── periodData.ts         # Zod схемы для валидации
 │   │
 │   ├── types/
-│   │   └── metrics.ts            # Унифицированные TypeScript типы
+│   │   └── metrics.ts            # TypeScript типы
 │   │
 │   ├── utils/
-│   │   ├── colors.ts             # Константы цветов и функции для метрик
-│   │   └── metricAdapters.ts     # Адаптеры для преобразования данных
+│   │   ├── colors.ts             # Цвета для графиков
+│   │   └── metricAdapters.ts     # Адаптеры данных
 │   │
-│   └── data/                     # Данные (генерируются скриптом fetch-jira)
-│       ├── config.json           # Конфигурация периодов и видимости секций
-│       └── periods/              # Данные по каждому периоду
-│           ├── period1.json
-│           ├── period2.json
-│           └── ...
+│   └── data/                     # Данные (генерируются fetch-jira)
+│       ├── config.json
+│       └── periods/
 │
-├── scripts/                      # Скрипты сбора данных из Jira
-│   ├── fetch-jira.ts             # Основной скрипт сбора данных
-│   ├── discover-jira.ts          # Обнаружение полей и структуры Jira
-│   └── jira/                     # Модули для работы с Jira API
-│       ├── client.ts             # HTTP клиент для Jira
-│       ├── config.ts             # Конфигурация и цвета
-│       ├── queries.ts            # JQL запросы
-│       ├── transformers.ts       # Трансформация данных
-│       ├── types.ts              # TypeScript типы
-│       └── logger.ts             # Логирование
+├── scripts/
+│   ├── fetch-jira.ts             # Сбор данных из Jira
+│   ├── deploy-to-kv.ts           # Деплой в Cloudflare KV
+│   ├── clear-kv.ts               # Очистка Cloudflare KV
+│   └── jira/                     # Модули для Jira API
 │
-├── logs/                         # Логи (создаются при --logs/--resp)
+├── docs/                         # Документация
+├── wrangler.toml                 # Конфигурация Cloudflare
 └── .env.local                    # Переменные окружения (не в git)
 ```
 
 ## Архитектура компонентов
-
-### Иерархия компонентов
 
 ```
 page.tsx
@@ -111,80 +109,65 @@ page.tsx
 │   └── SeverityCard / EnvironmentCard / ResolutionCard / ...
 │       └── MetricCard (универсальный)
 │           ├── MetricCardHeader
-│           │   ├── ChartModeToggle
-│           │   ├── EnvironmentFilter
-│           │   └── PeriodSelector
 │           ├── MetricPieChart / TrendChart
 │           └── MetricTable
-└── SprintBacklogChart
+├── SprintBacklogChart
 └── ComponentAnalysis
-    └── ComponentTrendChart
 ```
 
 ### Принципы
 
-1. **Унифицированные типы** (`src/types/metrics.ts`):
-   - `MetricItem` - единый формат для всех метрик
-   - `ChartMode` - режимы отображения (pie/bar/trend)
-   - `EnvironmentFilter` - фильтры окружения
+1. **Унифицированные типы** — `MetricItem` единый формат для всех метрик
+2. **Адаптеры** — преобразуют JSON в `MetricItem[]`, вычисляют цвета
+3. **Zod валидация** — типобезопасность на этапе runtime
+4. **Error Boundaries** — ошибка в одной карточке не ломает дашборд
 
-2. **Адаптеры** (`src/utils/metricAdapters.ts`):
-   - Преобразуют данные из JSON в `MetricItem[]`
-   - Вычисляют `color` и `percentage` на лету из `colors.ts`
-   - `adaptSeverityData`, `adaptEnvironmentData`, `adaptResolutionData`, etc.
-
-3. **Zod валидация** (`src/schemas/periodData.ts`):
-   - Валидация данных при загрузке
-   - Типобезопасность на этапе runtime
-
-4. **Error Boundaries**:
-   - Каждая карточка обёрнута в `ErrorBoundary`
-   - Ошибка в одной карточке не ломает весь дашборд
-
-## Скрипты сбора данных
-
-### Переменные окружения (.env.local)
+## Переменные окружения
 
 ```env
-# Обязательные
+# === Jira (обязательные) ===
 JIRA_HOST=https://your-company.atlassian.net
 JIRA_EMAIL=your-email@company.com
 JIRA_API_TOKEN=your-api-token
 JIRA_PROJECT_KEY=PROJECT
 
-# Опциональные
+# === Jira (опциональные) ===
 JIRA_BOARD_ID=123                    # ID доски для спринтов
 JIRA_FIELD_SEVERITY=customfield_10001
 JIRA_FIELD_BUG_REASON=customfield_10002
 JIRA_FIELD_ENVIRONMENT=environment
-JIRA_FIELD_COMPONENT=                # Пусто = стандартное поле components
+JIRA_FIELD_COMPONENT=                # Пусто = стандартное поле
 SPRINTS_PER_PERIOD=4                 # Спринтов в периоде
-MAX_SPRINTS=40                       # Максимум спринтов для графика бэклога
+MAX_SPRINTS=40                       # Максимум для графика бэклога
+
+# === Cloudflare (опционально) ===
+CLOUDFLARE_API_TOKEN=...
+CLOUDFLARE_ACCOUNT_ID=...
+CLOUDFLARE_KV_NAMESPACE_ID=...
+
+# === Frontend ===
+DATA_SOURCE=local                    # local | cloudflare
+NEXT_PUBLIC_API_URL=https://...      # URL Cloudflare Worker
 ```
 
-### Команды
+Полный список в `.env.example`.
 
-```bash
-# Основной сбор данных
-npm run fetch-jira
+## NPM скрипты
 
-# С детальными логами
-npm run fetch-jira:logs
+| Команда | Описание |
+|---------|----------|
+| `npm run dev` | Запуск dev сервера |
+| `npm run build` | Production сборка |
+| `npm run lint` | Проверка ESLint |
+| `npm run fetch-jira` | Сбор данных из Jira |
+| `npm run fetch-jira:logs` | С детальными логами |
+| `npm run fetch-jira:full` | С логами и HTTP ответами |
+| `npm run deploy-data` | Деплой в Cloudflare KV |
+| `npm run clear-kv` | Очистка Cloudflare KV |
+| `npm run update-kv` | fetch-jira + deploy-data |
+| `npm run update-data` | fetch-jira + build |
 
-# С сохранением HTTP ответов
-npm run fetch-jira:resp
-
-# Полный режим (логи + ответы)
-npm run fetch-jira:full
-
-# Обнаружение структуры Jira
-npm run discover-jira
-
-# Сбор данных + сборка
-npm run update-data
-```
-
-### Что делает fetch-jira
+## Что делает fetch-jira
 
 1. Загружает закрытые спринты с доски
 2. Группирует спринты в периоды (по N спринтов)
@@ -192,8 +175,7 @@ npm run update-data
    - Собирает баги из бэклога спринтов
    - Собирает баги, созданные в даты периода
    - Рассчитывает метрики (severity, environment, resolution, components, reasons)
-4. Для каждого спринта:
-   - Считает количество открытых багов на дату завершения (для графика бэклога)
+4. Для каждого спринта считает открытые баги (для графика бэклога)
 5. Сохраняет в `src/data/`
 
 ## Структура данных
@@ -202,12 +184,12 @@ npm run update-data
 
 ```typescript
 {
-  lastUpdated: string;          // Дата последнего обновления
-  projectKey: string;           // Ключ проекта
-  periods: PeriodConfig[];      // Список периодов
-  components: string[];         // Список компонентов
-  sprints: SprintData[];        // Данные спринтов для графика бэклога
-  visibility: SectionVisibility; // Видимость секций
+  lastUpdated: string;
+  projectKey: string;
+  periods: PeriodConfig[];
+  components: string[];
+  sprints: SprintData[];
+  visibility: SectionVisibility;
 }
 ```
 
@@ -218,69 +200,18 @@ npm run update-data
   periodId: string;
   startDate: string;            // YYYY-MM-DD
   endDate: string;
-  generatedAt: string;
-  totalBugs: number;            // Всего багов в бэклоге спринтов
-
-  // Метрики хранят только label/name и count
-  // color и percentage вычисляются на фронте (src/utils/colors.ts)
+  totalBugs: number;
   severity: Array<{ label: string; count: number }>;
   environment: Array<{ environment: string; count: number }>;
   resolution: Array<{ status: string; count: number }>;
   components: Array<{ name: string; count: number }>;
-  trackers: Array<{ name: string; count: number }>;
-  reasons: Array<{ reason: string; count: number }>;
-  rawBugs: RawBug[];            // Минимальные данные для фильтрации
-
-  // Данные по багам, созданным в период
-  totalBugsCreated: number;
-  componentsCreated: Array<{ name: string; count: number }>;
-  reasonsCreated: Array<{ reason: string; count: number }>;
-  rawBugsCreated: RawBug[];
+  // ... и другие метрики
 }
 ```
 
-## Правила разработки
+## Сборка
 
-### TypeScript
-
-- **Strict mode включён** - все типы должны быть явными
-- Не использовать `any` - используйте `unknown` или конкретные типы
-- Для Chart.js callbacks используйте типы: `TooltipItem<'pie'>`, `TooltipItem<'line'>`, `Chart`
-- При индексации объектов используйте type assertions: `obj[key as keyof Type]`
-
-### Компоненты
-
-- **Не создавать новые компоненты без необходимости** - используйте существующие из `ui/`
-- Новые карточки метрик создавайте в `components/metrics/`
-- Используйте `MetricCard` как базу для карточек метрик
-- Оборачивайте карточки в `ErrorBoundary`
-
-### Данные
-
-- Все данные загружаются через `periodDataService.ts`
-- Данные валидируются Zod схемами при загрузке
-- Не модифицируйте файлы в `src/data/` вручную - они генерируются скриптом
-
-### Стили
-
-- Используйте Tailwind CSS классы
-- Цветовая схема: красный (`red-600`, `red-800`) - основной цвет
-- Цвета для графиков определены в `src/utils/colors.ts`
-
-## NPM скрипты
-
-| Команда | Описание |
-|---------|----------|
-| `npm run dev` | Запуск dev сервера |
-| `npm run build` | Production сборка |
-| `npm run start` | Запуск production сервера |
-| `npm run lint` | Проверка ESLint |
-| `npm run fetch-jira` | Сбор данных из Jira |
-| `npm run update-data` | Сбор данных + сборка |
-
-## Деплой
-
-Проект настроен для статического экспорта на GitHub Pages:
+Проект настроен для статического экспорта:
 
 ```bash
 npm run build
@@ -290,17 +221,58 @@ npm run build
 - `basePath` автоматически устанавливается в production
 - Изображения не оптимизируются (статический экспорт)
 
+## Деплой
+
+### GitHub Pages (режим local)
+
+1. Данные хранятся в репозитории (`src/data/`)
+2. При push в master автоматически деплоится через GitHub Actions
+3. Для обновления данных: `npm run fetch-jira` → commit → push
+
+### GitHub Pages + Cloudflare KV (режим cloudflare)
+
+1. Данные хранятся в Cloudflare KV
+2. Сайт загружает данные через API при открытии
+3. Для обновления данных: `npm run update-kv` (без git push)
+
+Настройка GitHub Variables для cloudflare режима:
+- `NEXT_PUBLIC_DATA_SOURCE` = `cloudflare`
+- `NEXT_PUBLIC_API_URL` = URL вашего Worker'а
+
+## Правила разработки
+
+### TypeScript
+
+- **Strict mode включён** — все типы должны быть явными
+- Не использовать `any` — используйте `unknown` или конкретные типы
+
+### Компоненты
+
+- Используйте существующие из `ui/`
+- Новые карточки метрик создавайте в `components/metrics/`
+- Оборачивайте карточки в `ErrorBoundary`
+
+### Данные
+
+- Загружаются через `useDataSource` хук (или `periodDataService.ts` для local)
+- Валидируются Zod схемами
+- Не модифицируйте `src/data/` вручную
+
+### Стили
+
+- Используйте Tailwind CSS
+- Цвета для графиков в `src/utils/colors.ts`
+
 ## FAQ
 
 ### Как добавить новую метрику?
 
-1. Добавьте поле в `scripts/jira/types.ts` → `PeriodData`
-2. Обновите `scripts/jira/transformers.ts` для сбора данных
-3. Обновите `src/schemas/periodData.ts` (Zod схема)
+1. Добавьте поле в `scripts/jira/types.ts`
+2. Обновите `scripts/jira/transformers.ts`
+3. Обновите `src/schemas/periodData.ts`
 4. Добавьте цвета в `src/utils/colors.ts`
 5. Создайте адаптер в `src/utils/metricAdapters.ts`
 6. Создайте карточку в `src/components/metrics/`
-7. Добавьте на страницу в `src/app/page.tsx`
 
 ### Как скрыть секцию?
 

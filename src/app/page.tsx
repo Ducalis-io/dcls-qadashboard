@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { SeverityCard, EnvironmentCard, ResolutionCard, TrackersCard, ReasonsCard } from '@/components/metrics'
 import ComponentAnalysis from '@/components/ComponentAnalysis'
 import TestCoverage from '@/components/TestCoverage'
 import SprintBacklogChart from '@/components/SprintBacklogChart'
 import ErrorBoundary from '@/components/ErrorBoundary'
-import { getConfig, getPeriodData } from '@/services/periodDataService'
+import { useDashboardData } from '@/hooks/useDataSource'
 
 // Данные для покрытия тестами (пока статичные, можно добавить в JSON позже)
 const mockCoverageData = {
@@ -15,23 +15,16 @@ const mockCoverageData = {
 }
 
 export default function Home() {
-  // Загружаем конфигурацию
-  const config = useMemo(() => getConfig(), [])
+  // Загружаем данные через хук (поддерживает local и cloudflare режимы)
+  const {
+    config,
+    periodData: currentData,
+    selectedPeriod,
+    changePeriod: setSelectedPeriod,
+    loading,
+  } = useDashboardData()
 
-  // Первый период по умолчанию
-  const defaultPeriod = config?.periods[0]?.id || 'period1'
-  const [selectedPeriod, setSelectedPeriod] = useState(defaultPeriod)
   const [activeTab, setActiveTab] = useState('overview')
-
-  // Загружаем данные текущего периода
-  const currentData = useMemo(() => {
-    const data = getPeriodData(selectedPeriod)
-    if (!data) {
-      console.error(`Не удалось загрузить данные для периода ${selectedPeriod}`)
-      return null
-    }
-    return data
-  }, [selectedPeriod])
 
   // Компонент для вкладок
   const TabButton = ({ label, isActive, onClick }: {
@@ -51,6 +44,18 @@ export default function Home() {
     </button>
   )
 
+  // Состояние загрузки
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow p-6 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Загрузка данных...</p>
+        </div>
+      </main>
+    )
+  }
+
   // Если не удалось загрузить конфигурацию
   if (!config) {
     return (
@@ -65,13 +70,13 @@ export default function Home() {
   }
 
   // Если не удалось загрузить данные периода
-  if (!currentData) {
+  if (!currentData || !selectedPeriod) {
     return (
       <main className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="bg-white rounded-lg shadow p-6">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Ошибка загрузки данных</h1>
-          <p className="text-gray-700">Не удалось загрузить данные для периода {selectedPeriod}.</p>
-          <p className="text-gray-600 mt-2">Убедитесь, что файл src/data/periods/{selectedPeriod}.json существует.</p>
+          <p className="text-gray-700">Не удалось загрузить данные для периода {selectedPeriod || 'unknown'}.</p>
+          <p className="text-gray-600 mt-2">Проверьте источник данных и попробуйте обновить страницу.</p>
         </div>
       </main>
     )

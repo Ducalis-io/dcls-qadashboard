@@ -13,7 +13,11 @@
     "fetch-jira:logs": "npx tsx scripts/fetch-jira.ts --logs",
     "fetch-jira:resp": "npx tsx scripts/fetch-jira.ts --resp",
     "fetch-jira:full": "npx tsx scripts/fetch-jira.ts --logs --resp",
-    "update-data": "npm run fetch-jira && npm run build"
+    "deploy-data": "npx tsx scripts/deploy-to-kv.ts",
+    "deploy-data:jira": "npx tsx scripts/deploy-to-kv.ts --from-jira",
+    "clear-kv": "npx tsx scripts/clear-kv.ts",
+    "update-data": "npm run fetch-jira && npm run build",
+    "update-kv": "npm run fetch-jira && npm run deploy-data"
   },
   "dependencies": {
     "chart.js": "^4.4.8",
@@ -36,6 +40,7 @@
     "eslint-config-next": "15.3.0",
     "tailwindcss": "^4",
     "tsx": "^4.19.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^3.99.0"
   }
 }

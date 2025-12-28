@@ -46,7 +46,10 @@ next-env.d.ts
 #AI
 /.claude
 
-# Ohter
+# Wrangler
+.wrangler/
+
+# Other
 /.Legacy
 nul
 

@@ -1,0 +1,5 @@
+# Конфигурация Wrangler для работы с Cloudflare KV
+# KV namespace ID берётся из переменной CLOUDFLARE_KV_NAMESPACE_ID
+
+name = "qa-dashboard-data"
+compatibility_date = "2024-01-01"

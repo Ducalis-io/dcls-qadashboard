@@ -1,5 +1,18 @@
 /**
- * Сервис для загрузки данных периодов из JSON файлов
+ * Сервис для загрузки данных периодов
+ *
+ * Поддерживает два режима работы:
+ *   - local: данные из src/data (синхронные функции)
+ *   - cloudflare: данные из Cloudflare KV API (используйте хуки из useDataSource.ts)
+ *
+ * Режим определяется переменной NEXT_PUBLIC_DATA_SOURCE в .env.local:
+ *   - NEXT_PUBLIC_DATA_SOURCE=local (по умолчанию)
+ *   - NEXT_PUBLIC_DATA_SOURCE=cloudflare
+ *
+ * Для cloudflare режима используйте хуки:
+ *   import { useConfig, usePeriodData, useDashboardData } from '@/hooks/useDataSource';
+ *
+ * Синхронные функции ниже работают только в local режиме.
  */
 
 import { PeriodDataSchema, DashboardConfigSchema, ValidatedDashboardConfig } from '@/schemas/periodData';
