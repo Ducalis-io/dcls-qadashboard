@@ -9,22 +9,22 @@ import { adaptResolutionData } from '@/utils/metricAdapters';
 interface ResolutionData {
   status: string;
   count: number;
-  percentage: number;
-  color: string;
 }
 
 interface ResolutionCardProps {
   data: ResolutionData[];
+  totalBugs: number;
   selectedPeriod?: string;
   onPeriodChange?: (period: string) => void;
 }
 
 const ResolutionCard: React.FC<ResolutionCardProps> = ({
   data,
+  totalBugs,
   selectedPeriod,
   onPeriodChange,
 }) => {
-  const adaptedData = adaptResolutionData(data);
+  const adaptedData = adaptResolutionData(data, totalBugs);
 
   return (
     <MetricCard

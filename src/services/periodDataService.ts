@@ -16,6 +16,7 @@ export interface PeriodConfig {
 // Используем тип напрямую из Zod схемы для избежания дублирования
 export type DashboardConfig = ValidatedDashboardConfig;
 
+// Типы данных из JSON (без color и percentage - вычисляются на фронте)
 export interface PeriodData {
   periodId: string;
   startDate: string;
@@ -25,40 +26,28 @@ export interface PeriodData {
   severity: Array<{
     label: string;
     count: number;
-    percentage: number;
-    color: string;
   }>;
   environment: Array<{
     environment: string;
     count: number;
-    percentage: number;
-    color: string;
   }>;
   resolution: Array<{
     status: string;
     count: number;
-    percentage: number;
-    color: string;
   }>;
   components: Array<{
     name: string;
     count: number;
-    percentage: number;
   }>;
   trackers: Array<{
     name: string;
     count: number;
-    percentage: number;
-    color: string;
   }>;
   reasons: Array<{
     reason: string;
     count: number;
-    percentage: number;
-    color: string;
   }>;
   // Минимальный набор для фильтрации на фронтенде
-  // Удалены: key, summary, severity, status, createdDate, resolvedDate
   rawBugs: Array<{
     environment?: string;
     component?: string;
@@ -68,13 +57,10 @@ export interface PeriodData {
   componentsCreated?: Array<{
     name: string;
     count: number;
-    percentage: number;
   }>;
   reasonsCreated?: Array<{
     reason: string;
     count: number;
-    percentage: number;
-    color: string;
   }>;
   // Минимальный набор для фильтрации на фронтенде
   rawBugsCreated?: Array<{

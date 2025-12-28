@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+// Схема для метрик без color и percentage (вычисляются на фронте)
 export const MetricItemSchema = z.object({
   label: z.string().optional(),
   environment: z.string().optional(),
@@ -7,7 +8,8 @@ export const MetricItemSchema = z.object({
   name: z.string().optional(),
   reason: z.string().optional(),
   count: z.number().int().min(0),
-  percentage: z.number().min(0).max(100),
+  // percentage и color теперь optional - вычисляются на фронте
+  percentage: z.number().min(0).max(100).optional(),
   color: z.string().optional(),
 });
 

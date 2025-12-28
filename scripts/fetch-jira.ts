@@ -390,9 +390,9 @@ async function main() {
     resolution: parseVisibilityFlag(process.env.SHOW_RESOLUTION),
     priority: parseVisibilityFlag(process.env.SHOW_PRIORITY),
     components: parseVisibilityFlag(process.env.SHOW_COMPONENTS),
-    trackers: parseVisibilityFlag(process.env.SHOW_TRACKERS),
+    trackers: parseVisibilityFlag(process.env.SHOW_TRACKERS || '0'),
     reasons: parseVisibilityFlag(process.env.SHOW_REASONS),
-    testCoverage: parseVisibilityFlag(process.env.SHOW_TEST_COVERAGE),
+    testCoverage: parseVisibilityFlag(process.env.SHOW_TEST_COVERAGE || '0'),
   };
 
   logger.info('👁️  Видимость секций:');

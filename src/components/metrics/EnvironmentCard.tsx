@@ -9,22 +9,22 @@ import { adaptEnvironmentData } from '@/utils/metricAdapters';
 interface EnvironmentData {
   environment: string;
   count: number;
-  percentage: number;
-  color: string;
 }
 
 interface EnvironmentCardProps {
   data: EnvironmentData[];
+  totalBugs: number;
   selectedPeriod?: string;
   onPeriodChange?: (period: string) => void;
 }
 
 const EnvironmentCard: React.FC<EnvironmentCardProps> = ({
   data,
+  totalBugs,
   selectedPeriod,
   onPeriodChange,
 }) => {
-  const adaptedData = adaptEnvironmentData(data);
+  const adaptedData = adaptEnvironmentData(data, totalBugs);
 
   return (
     <MetricCard

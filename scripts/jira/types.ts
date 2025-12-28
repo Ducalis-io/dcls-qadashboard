@@ -75,46 +75,35 @@ export interface PeriodConfig {
   sprintNames?: string[];
 }
 
-// Transformed data types
+// Transformed data types (без color и percentage - вычисляются на фронте)
 export interface SeverityData {
   label: string;
   count: number;
-  percentage: number;
-  color: string;
 }
 
 export interface EnvironmentData {
   environment: string;
   count: number;
-  percentage: number;
-  color: string;
 }
 
 export interface ResolutionData {
   status: string;
   count: number;
-  percentage: number;
-  color: string;
 }
 
 export interface ComponentData {
   name: string;
   count: number;
-  percentage: number;
 }
 
 export interface TrackerData {
   name: string;
   count: number;
-  percentage: number;
-  color: string;
 }
 
 export interface ReasonData {
   reason: string;
   count: number;
-  percentage: number;
-  color: string;
 }
 
 export interface SprintBugData {

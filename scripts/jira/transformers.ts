@@ -10,14 +10,7 @@ import type {
   RawBug,
 } from './types';
 export type { ComponentData, ReasonData };
-import {
-  SEVERITY_COLORS,
-  ENVIRONMENT_COLORS,
-  BUG_REASON_COLORS,
-  TRACKER_COLORS,
-  RESOLUTION_COLORS,
-  getBugReasonColor,
-} from './config';
+// Цвета и percentage теперь вычисляются на фронте
 
 /**
  * Трансформирует массив Jira issues в структурированные данные для дашборда
@@ -52,8 +45,6 @@ export function transformBugsToMetrics(
   const severity: SeverityData[] = Array.from(severityCounts.entries()).map(([label, count]) => ({
     label,
     count,
-    percentage: total > 0 ? Number(((count / total) * 100).toFixed(2)) : 0,
-    color: SEVERITY_COLORS[label] || SEVERITY_COLORS.unknown,
   }));
 
   // 2. Группировка по Environment
@@ -79,8 +70,6 @@ export function transformBugsToMetrics(
     ([environment, count]) => ({
       environment,
       count,
-      percentage: total > 0 ? Number(((count / total) * 100).toFixed(2)) : 0,
-      color: ENVIRONMENT_COLORS[environment] || ENVIRONMENT_COLORS.unknown,
     })
   );
 
@@ -103,8 +92,6 @@ export function transformBugsToMetrics(
     ([status, count]) => ({
       status,
       count,
-      percentage: total > 0 ? Number(((count / total) * 100).toFixed(2)) : 0,
-      color: RESOLUTION_COLORS[status] || RESOLUTION_COLORS.unknown,
     })
   );
 
@@ -145,7 +132,6 @@ export function transformBugsToMetrics(
     .map(([name, count]) => ({
       name,
       count,
-      percentage: total > 0 ? Number(((count / total) * 100).toFixed(2)) : 0,
     }))
     .sort((a, b) => b.count - a.count);
 
@@ -167,8 +153,6 @@ export function transformBugsToMetrics(
   const reasons: ReasonData[] = Array.from(reasonCounts.entries()).map(([reason, count]) => ({
     reason,
     count,
-    percentage: total > 0 ? Number(((count / total) * 100).toFixed(2)) : 0,
-    color: getBugReasonColor(reason),
   }));
 
   // 6. Trackers (пока заглушка, так как не ясно откуда брать)
@@ -177,8 +161,6 @@ export function transformBugsToMetrics(
     {
       name: 'Jira',
       count: total,
-      percentage: 100,
-      color: TRACKER_COLORS.Jira,
     },
   ];
 
@@ -275,7 +257,6 @@ export function extractComponentsAndReasons(
     .map(([name, count]) => ({
       name,
       count,
-      percentage: total > 0 ? Number(((count / total) * 100).toFixed(2)) : 0,
     }))
     .sort((a, b) => b.count - a.count);
 
@@ -297,8 +278,6 @@ export function extractComponentsAndReasons(
   const reasons: ReasonData[] = Array.from(reasonCounts.entries()).map(([reason, count]) => ({
     reason,
     count,
-    percentage: total > 0 ? Number(((count / total) * 100).toFixed(2)) : 0,
-    color: getBugReasonColor(reason),
   }));
 
   // Raw bugs - минимальный набор для фильтрации на фронтенде

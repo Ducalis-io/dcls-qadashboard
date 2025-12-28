@@ -76,6 +76,7 @@ dcls-qadashboard/
 │   │   └── metrics.ts            # Унифицированные TypeScript типы
 │   │
 │   ├── utils/
+│   │   ├── colors.ts             # Константы цветов и функции для метрик
 │   │   └── metricAdapters.ts     # Адаптеры для преобразования данных
 │   │
 │   └── data/                     # Данные (генерируются скриптом fetch-jira)
@@ -128,7 +129,8 @@ page.tsx
    - `EnvironmentFilter` - фильтры окружения
 
 2. **Адаптеры** (`src/utils/metricAdapters.ts`):
-   - Преобразуют данные из разных форматов в `MetricItem[]`
+   - Преобразуют данные из JSON в `MetricItem[]`
+   - Вычисляют `color` и `percentage` на лету из `colors.ts`
    - `adaptSeverityData`, `adaptEnvironmentData`, `adaptResolutionData`, etc.
 
 3. **Zod валидация** (`src/schemas/periodData.ts`):
@@ -218,18 +220,21 @@ npm run update-data
   endDate: string;
   generatedAt: string;
   totalBugs: number;            // Всего багов в бэклоге спринтов
-  severity: MetricItem[];       // Распределение по severity
-  environment: MetricItem[];    // Распределение по окружению
-  resolution: MetricItem[];     // Статусы решения
-  components: MetricItem[];     // Компоненты (из бэклога)
-  trackers: MetricItem[];       // Источники
-  reasons: MetricItem[];        // Причины (из бэклога)
-  rawBugs: RawBug[];            // Минимальные данные для фильтрации (environment, component)
+
+  // Метрики хранят только label/name и count
+  // color и percentage вычисляются на фронте (src/utils/colors.ts)
+  severity: Array<{ label: string; count: number }>;
+  environment: Array<{ environment: string; count: number }>;
+  resolution: Array<{ status: string; count: number }>;
+  components: Array<{ name: string; count: number }>;
+  trackers: Array<{ name: string; count: number }>;
+  reasons: Array<{ reason: string; count: number }>;
+  rawBugs: RawBug[];            // Минимальные данные для фильтрации
 
   // Данные по багам, созданным в период
   totalBugsCreated: number;
-  componentsCreated: MetricItem[];
-  reasonsCreated: MetricItem[];
+  componentsCreated: Array<{ name: string; count: number }>;
+  reasonsCreated: Array<{ reason: string; count: number }>;
   rawBugsCreated: RawBug[];
 }
 ```
@@ -260,7 +265,7 @@ npm run update-data
 
 - Используйте Tailwind CSS классы
 - Цветовая схема: красный (`red-600`, `red-800`) - основной цвет
-- Для графиков используйте `rgba` цвета из `scripts/jira/config.ts`
+- Цвета для графиков определены в `src/utils/colors.ts`
 
 ## NPM скрипты
 
@@ -292,9 +297,10 @@ npm run build
 1. Добавьте поле в `scripts/jira/types.ts` → `PeriodData`
 2. Обновите `scripts/jira/transformers.ts` для сбора данных
 3. Обновите `src/schemas/periodData.ts` (Zod схема)
-4. Создайте адаптер в `src/utils/metricAdapters.ts`
-5. Создайте карточку в `src/components/metrics/`
-6. Добавьте на страницу в `src/app/page.tsx`
+4. Добавьте цвета в `src/utils/colors.ts`
+5. Создайте адаптер в `src/utils/metricAdapters.ts`
+6. Создайте карточку в `src/components/metrics/`
+7. Добавьте на страницу в `src/app/page.tsx`
 
 ### Как скрыть секцию?
 

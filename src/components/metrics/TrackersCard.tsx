@@ -8,22 +8,22 @@ import { adaptTrackersData } from '@/utils/metricAdapters';
 interface TrackersData {
   name: string;
   count: number;
-  percentage: number;
-  color: string;
 }
 
 interface TrackersCardProps {
   data: TrackersData[];
+  totalBugs: number;
   selectedPeriod?: string;
   onPeriodChange?: (period: string) => void;
 }
 
 const TrackersCard: React.FC<TrackersCardProps> = ({
   data,
+  totalBugs,
   selectedPeriod,
   onPeriodChange,
 }) => {
-  const adaptedData = adaptTrackersData(data);
+  const adaptedData = adaptTrackersData(data, totalBugs);
 
   return (
     <MetricCard

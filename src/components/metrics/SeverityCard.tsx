@@ -9,22 +9,22 @@ import { adaptSeverityData } from '@/utils/metricAdapters';
 interface SeverityData {
   label: string;
   count: number;
-  percentage: number;
-  color: string;
 }
 
 interface SeverityCardProps {
   data: SeverityData[];
+  totalBugs: number;
   selectedPeriod?: string;
   onPeriodChange?: (period: string) => void;
 }
 
 const SeverityCard: React.FC<SeverityCardProps> = ({
   data,
+  totalBugs,
   selectedPeriod,
   onPeriodChange,
 }) => {
-  const adaptedData = adaptSeverityData(data);
+  const adaptedData = adaptSeverityData(data, totalBugs);
 
   return (
     <MetricCard

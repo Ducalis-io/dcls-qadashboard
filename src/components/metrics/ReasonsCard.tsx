@@ -9,22 +9,22 @@ import { adaptReasonsData } from '@/utils/metricAdapters';
 interface ReasonsData {
   reason: string;
   count: number;
-  percentage: number;
-  color: string;
 }
 
 interface ReasonsCardProps {
   data: ReasonsData[];
+  totalBugs: number;
   selectedPeriod?: string;
   onPeriodChange?: (period: string) => void;
 }
 
 const ReasonsCard: React.FC<ReasonsCardProps> = ({
   data,
+  totalBugs,
   selectedPeriod,
   onPeriodChange,
 }) => {
-  const adaptedData = adaptReasonsData(data);
+  const adaptedData = adaptReasonsData(data, totalBugs);
 
   return (
     <MetricCard

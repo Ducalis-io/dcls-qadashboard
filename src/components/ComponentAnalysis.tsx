@@ -26,11 +26,10 @@ ChartJS.register(
   Legend
 );
 
-// Интерфейс для данных о компонентах
+// Интерфейс для данных о компонентах (без percentage - вычисляется внутри)
 interface ComponentData {
   name: string;
   count: number;
-  percentage: number;
 }
 
 /**
@@ -88,12 +87,10 @@ const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({
       componentCounts.set(component, (componentCounts.get(component) || 0) + 1);
     });
 
-    const total = filteredBugs.length;
     const result: ComponentData[] = Array.from(componentCounts.entries())
       .map(([name, count]) => ({
         name,
         count,
-        percentage: total > 0 ? Number(((count / total) * 100).toFixed(2)) : 0,
       }))
       .sort((a, b) => b.count - a.count);
 
@@ -336,19 +333,22 @@ const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {sortedData.map((item, index) => (
-                  <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                    <td className="py-2 px-4 border-b border-gray-200 text-sm">
-                      {item.name}
-                    </td>
-                    <td className="py-2 px-4 border-b border-gray-200 text-sm text-right">
-                      {item.count}
-                    </td>
-                    <td className="py-2 px-4 border-b border-gray-200 text-sm text-right">
-                      {item.percentage.toFixed(2)}%
-                    </td>
-                  </tr>
-                ))}
+                {sortedData.map((item, index) => {
+                  const percentage = totalBugs > 0 ? ((item.count / totalBugs) * 100) : 0;
+                  return (
+                    <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                      <td className="py-2 px-4 border-b border-gray-200 text-sm">
+                        {item.name}
+                      </td>
+                      <td className="py-2 px-4 border-b border-gray-200 text-sm text-right">
+                        {item.count}
+                      </td>
+                      <td className="py-2 px-4 border-b border-gray-200 text-sm text-right">
+                        {percentage.toFixed(2)}%
+                      </td>
+                    </tr>
+                  );
+                })}
                 <tr className="bg-gray-100 font-medium">
                   <td className="py-2 px-4 border-b border-gray-200 text-sm">
                     Всего

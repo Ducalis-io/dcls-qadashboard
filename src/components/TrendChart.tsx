@@ -15,6 +15,12 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { getAllPeriodsData, getConfig, PeriodData } from '@/services/periodDataService';
+import {
+  getSeverityColor,
+  getEnvironmentColor,
+  getResolutionColor,
+  getReasonColor,
+} from '@/utils/colors';
 
 ChartJS.register(
   CategoryScale,
@@ -30,11 +36,10 @@ ChartJS.register(
 export interface TrendDataItem {
   label: string;
   count: number;
-  color: string;
 }
 
-// Type for metric items that can have different fields
-type MetricDataItem = { label?: string; environment?: string; status?: string; reason?: string; count: number; color: string };
+// Type for metric items that can have different fields (без color - вычисляется)
+type MetricDataItem = { label?: string; environment?: string; status?: string; reason?: string; count: number };
 
 interface TrendChartProps {
   // Тип данных: какое поле брать из периода
@@ -70,20 +75,32 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
     return Array.from(labelSet);
   }, [allPeriodsData, dataType, getLabelKey]);
 
+  // Функция для получения цвета на основе типа данных и label
+  const getColorForLabel = (label: string): string => {
+    switch (dataType) {
+      case 'severity':
+        return getSeverityColor(label);
+      case 'environment':
+        return getEnvironmentColor(label);
+      case 'resolution':
+        return getResolutionColor(label);
+      case 'reasons':
+      case 'reasonsCreated':
+        return getReasonColor(label);
+      default:
+        return 'rgba(128, 128, 128, 0.8)';
+    }
+  };
+
   // Собираем цвета для каждого label
   const labelColors = useMemo(() => {
     const colors: Record<string, string> = {};
-    allPeriodsData.forEach(period => {
-      const items = getDataFromPeriod(period, dataType);
-      items?.forEach(item => {
-        const label = getLabelKey(item);
-        if (!colors[label] && item.color) {
-          colors[label] = item.color;
-        }
-      });
+    allLabels.forEach(label => {
+      colors[label] = getColorForLabel(label);
     });
     return colors;
-  }, [allPeriodsData, dataType, getLabelKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allLabels, dataType]);
 
   // Подготавливаем данные для графика
   const chartData = useMemo(() => {

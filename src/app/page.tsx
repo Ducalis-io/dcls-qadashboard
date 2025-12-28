@@ -128,6 +128,7 @@ export default function Home() {
                 <ErrorBoundary title="Распределение багов по окружениям">
                   <EnvironmentCard
                     data={currentData.environment}
+                    totalBugs={currentData.totalBugs}
                     selectedPeriod={selectedPeriod}
                     onPeriodChange={setSelectedPeriod}
                   />
@@ -137,6 +138,7 @@ export default function Home() {
                 <ErrorBoundary title="Статус резолюции багов">
                   <ResolutionCard
                     data={currentData.resolution}
+                    totalBugs={currentData.totalBugs}
                     selectedPeriod={selectedPeriod}
                     onPeriodChange={setSelectedPeriod}
                   />
@@ -146,6 +148,7 @@ export default function Home() {
                 <ErrorBoundary title="Серьёзность багов">
                   <SeverityCard
                     data={currentData.severity}
+                    totalBugs={currentData.totalBugs}
                     selectedPeriod={selectedPeriod}
                     onPeriodChange={setSelectedPeriod}
                   />
@@ -179,6 +182,7 @@ export default function Home() {
                 <ErrorBoundary title="Трекеры багов">
                   <TrackersCard
                     data={currentData.trackers}
+                    totalBugs={currentData.totalBugs}
                     selectedPeriod={selectedPeriod}
                     onPeriodChange={setSelectedPeriod}
                   />
@@ -191,6 +195,7 @@ export default function Home() {
                 <ErrorBoundary title="Причины создания багов">
                   <ReasonsCard
                     data={currentData.reasonsCreated || currentData.reasons}
+                    totalBugs={currentData.totalBugsCreated || currentData.totalBugs}
                     selectedPeriod={selectedPeriod}
                     onPeriodChange={setSelectedPeriod}
                   />
