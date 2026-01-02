@@ -14,7 +14,8 @@ import {
   TooltipItem,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { getAllPeriodsData, getConfig, PeriodData } from '@/services/periodDataService';
+import { useConfig, useAllPeriodsData } from '@/hooks/useDataSource';
+import type { PeriodData } from '@/services/periodDataService';
 import {
   getSeverityColor,
   getEnvironmentColor,
@@ -51,8 +52,10 @@ interface TrendChartProps {
 const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
   const [normalize, setNormalize] = useState(false);
 
-  const config = useMemo(() => getConfig(), []);
-  const allPeriodsData = useMemo(() => getAllPeriodsData(), []);
+  // Загружаем конфигурацию и данные всех периодов через хуки
+  const { config, loading: configLoading } = useConfig();
+  const { data: allPeriodsData, loading: dataLoading } = useAllPeriodsData();
+  const loading = configLoading || dataLoading;
 
   // Функция для получения данных из периода с учетом fallback
   const getDataFromPeriod = (period: PeriodData, type: string): MetricDataItem[] => {
@@ -216,6 +219,14 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
       },
     },
   }), [normalize]);
+
+  if (loading) {
+    return (
+      <div className="text-center text-gray-500 py-8">
+        Загрузка данных...
+      </div>
+    );
+  }
 
   if (allPeriodsData.length === 0) {
     return (

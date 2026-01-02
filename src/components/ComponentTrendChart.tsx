@@ -14,7 +14,7 @@ import {
   TooltipItem,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { getAllPeriodsData, getConfig } from '@/services/periodDataService';
+import { useConfig, useAllPeriodsData } from '@/hooks/useDataSource';
 
 ChartJS.register(
   CategoryScale,
@@ -61,8 +61,10 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
   const [threshold, setThreshold] = useState(defaultThreshold);
   const [inputValue, setInputValue] = useState(defaultThreshold.toString());
 
-  const config = useMemo(() => getConfig(), []);
-  const allPeriodsData = useMemo(() => getAllPeriodsData(), []);
+  // Загружаем конфигурацию и данные всех периодов через хуки
+  const { config, loading: configLoading } = useConfig();
+  const { data: allPeriodsData, loading: dataLoading } = useAllPeriodsData();
+  const loading = configLoading || dataLoading;
 
   // Обработка изменения порога
   const handleThresholdChange = (value: string) => {
@@ -295,6 +297,14 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
     }),
     [normalize]
   );
+
+  if (loading) {
+    return (
+      <div className="text-center text-gray-500 py-8">
+        Загрузка данных...
+      </div>
+    );
+  }
 
   if (allPeriodsData.length === 0) {
     return (

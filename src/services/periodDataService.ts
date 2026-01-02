@@ -84,8 +84,10 @@ export interface PeriodData {
 
 /**
  * Получить конфигурацию дашборда
+ * @deprecated Используйте хук useConfig() из @/hooks/useDataSource вместо этой функции
  */
 export function getConfig(): DashboardConfig | null {
+  console.warn('getConfig() is deprecated. Use useConfig() hook from @/hooks/useDataSource instead.');
   try {
     const result = DashboardConfigSchema.safeParse(configData);
     if (!result.success) {

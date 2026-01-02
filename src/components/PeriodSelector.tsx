@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useMemo } from 'react'
-import { getConfig } from '@/services/periodDataService'
+import React from 'react'
+import { useConfig } from '@/hooks/useDataSource'
 
 interface PeriodSelectorProps {
   selectedPeriod: string
@@ -14,10 +14,10 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   onPeriodChange,
   className = ''
 }) => {
-  // Загружаем конфигурацию с периодами
-  const config = useMemo(() => getConfig(), [])
+  // Загружаем конфигурацию с периодами через хук
+  const { config, loading } = useConfig()
 
-  if (!config || config.periods.length === 0) {
+  if (loading || !config || config.periods.length === 0) {
     return null
   }
 

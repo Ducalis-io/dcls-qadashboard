@@ -41,7 +41,7 @@ npm run dev
 
 Настройка в `.env.local`:
 ```env
-DATA_SOURCE=local                    # или cloudflare
+NEXT_PUBLIC_DATA_SOURCE=local        # или cloudflare
 NEXT_PUBLIC_API_URL=https://...      # URL Worker'а (для cloudflare)
 ```
 
@@ -71,10 +71,10 @@ dcls-qadashboard/
 │   │   └── ErrorBoundary.tsx
 │   │
 │   ├── hooks/
-│   │   └── useDataSource.ts      # Хук загрузки данных (local/cloudflare)
+│   │   └── useDataSource.ts      # Хуки загрузки данных (useConfig, usePeriodData, useAllPeriodsData)
 │   │
 │   ├── services/
-│   │   └── periodDataService.ts  # Сервис загрузки данных
+│   │   └── periodDataService.ts  # Типы данных (функции deprecated, используйте хуки)
 │   │
 │   ├── schemas/
 │   │   └── periodData.ts         # Zod схемы для валидации
@@ -86,14 +86,15 @@ dcls-qadashboard/
 │   │   ├── colors.ts             # Цвета для графиков
 │   │   └── metricAdapters.ts     # Адаптеры данных
 │   │
-│   └── data/                     # Данные (генерируются fetch-jira)
-│       ├── config.json
-│       └── periods/
+│   └── data/                     # Данные (генерируются fetch-jira или заглушки)
+│       ├── config.json           # Конфигурация (или заглушка для cloudflare)
+│       └── periods/              # Файлы периодов
 │
 ├── scripts/
 │   ├── fetch-jira.ts             # Сбор данных из Jira
 │   ├── deploy-to-kv.ts           # Деплой в Cloudflare KV
 │   ├── clear-kv.ts               # Очистка Cloudflare KV
+│   ├── validate-build.js         # Валидация конфигурации перед сборкой
 │   └── jira/                     # Модули для Jira API
 │
 ├── docs/                         # Документация
@@ -146,7 +147,7 @@ CLOUDFLARE_ACCOUNT_ID=...
 CLOUDFLARE_KV_NAMESPACE_ID=...
 
 # === Frontend ===
-DATA_SOURCE=local                    # local | cloudflare
+NEXT_PUBLIC_DATA_SOURCE=local        # local | cloudflare
 NEXT_PUBLIC_API_URL=https://...      # URL Cloudflare Worker
 ```
 
@@ -220,6 +221,20 @@ npm run build
 
 - `basePath` автоматически устанавливается в production
 - Изображения не оптимизируются (статический экспорт)
+- Перед сборкой автоматически запускается валидация (`prebuild`)
+
+### Валидация перед сборкой
+
+При `npm run build` проверяется корректность конфигурации:
+
+**В local режиме:**
+- Наличие `config.json` с реальными данными (не заглушка)
+- Наличие всех файлов периодов
+
+**В cloudflare режиме:**
+- Наличие `NEXT_PUBLIC_API_URL`
+
+Если валидация не пройдена, сборка остановится с подсказкой.
 
 ## Деплой
 
@@ -254,9 +269,15 @@ npm run build
 
 ### Данные
 
-- Загружаются через `useDataSource` хук (или `periodDataService.ts` для local)
+- Загружаются через хуки из `useDataSource.ts`:
+  - `useConfig()` — конфигурация дашборда
+  - `usePeriodData(periodId)` — данные одного периода
+  - `useAllPeriodsData()` — данные всех периодов
+  - `useDashboardData()` — комбинированный хук для главной страницы
+- Функции из `periodDataService.ts` — **deprecated**, используйте хуки
 - Валидируются Zod схемами
 - Не модифицируйте `src/data/` вручную
+- В cloudflare режиме папка `src/data/` содержит только заглушки для TypeScript
 
 ### Стили
 

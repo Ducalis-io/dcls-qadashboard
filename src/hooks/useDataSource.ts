@@ -176,6 +176,74 @@ export function usePeriodData(periodId: string | null) {
 }
 
 /**
+ * Хук для загрузки данных всех периодов
+ */
+export function useAllPeriodsData() {
+  const { config, loading: configLoading, error: configError } = useConfig();
+  const [allData, setAllData] = useState<PeriodData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (configLoading) {
+      return;
+    }
+
+    if (!config) {
+      setLoading(false);
+      return;
+    }
+
+    // Сохраняем config в локальную переменную для TypeScript
+    const currentConfig = config;
+    let cancelled = false;
+
+    async function loadAll() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Загружаем все периоды параллельно
+        const loadFunction = isCloudflareMode()
+          ? loadCloudflarePeriodData
+          : loadLocalPeriodData;
+
+        const results = await Promise.all(
+          currentConfig.periods.map((period) => loadFunction(period.id))
+        );
+
+        // Фильтруем null значения
+        const validResults = results.filter((data): data is PeriodData => data !== null);
+
+        if (!cancelled) {
+          setAllData(validResults);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err : new Error(String(err)));
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadAll();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [config, configLoading]);
+
+  return {
+    data: allData,
+    loading: configLoading || loading,
+    error: configError || error,
+  };
+}
+
+/**
  * Комбинированный хук для загрузки конфига и данных текущего периода
  */
 export function useDashboardData() {

@@ -1,0 +1,17 @@
+{
+  "lastUpdated": "",
+  "projectKey": "",
+  "periods": [],
+  "components": [],
+  "sprints": [],
+  "visibility": {
+    "priority": true,
+    "environment": true,
+    "resolution": true,
+    "components": true,
+    "trackers": true,
+    "reasons": true,
+    "sprintBacklog": true,
+    "testCoverage": true
+  }
+}

@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isCloudflareMode = process.env.NEXT_PUBLIC_DATA_SOURCE === 'cloudflare';
+
 const nextConfig: NextConfig = {
   // Включаем статический экспорт только для продакшена
   output: process.env.NODE_ENV === "production" ? "export" : undefined,
@@ -14,6 +16,19 @@ const nextConfig: NextConfig = {
 
   // Отключаем трейлинг слеш
   trailingSlash: true,
+
+  // В cloudflare режиме игнорируем отсутствующие локальные данные
+  webpack: isCloudflareMode
+    ? (config, { webpack }) => {
+        // Игнорируем модули из @/data/ в cloudflare режиме
+        config.plugins.push(
+          new webpack.IgnorePlugin({
+            resourceRegExp: /^@\/data\//,
+          })
+        );
+        return config;
+      }
+    : undefined,
 };
 
 export default nextConfig;

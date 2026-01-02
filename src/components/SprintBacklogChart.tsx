@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,7 +13,7 @@ import {
   TooltipItem
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { getConfig } from '@/services/periodDataService';
+import { useConfig } from '@/hooks/useDataSource';
 import InfoTooltip, { DATA_DESCRIPTIONS } from '@/components/InfoTooltip';
 
 // Регистрируем компоненты Chart.js
@@ -42,12 +42,12 @@ interface SprintBacklogChartProps {
 }
 
 const SprintBacklogChart: React.FC<SprintBacklogChartProps> = ({ data: initialData }) => {
-  // Загружаем конфигурацию и данные спринтов
-  const config = useMemo(() => getConfig(), []);
+  // Загружаем конфигурацию и данные спринтов через хук
+  const { config, loading } = useConfig();
   const sprintData = initialData || config?.sprints || [];
 
-  // Если нет данных спринтов
-  if (!sprintData || sprintData.length === 0) {
+  // Если загрузка или нет данных спринтов
+  if (loading || !sprintData || sprintData.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-semibold text-red-800 mb-4 flex items-center">
