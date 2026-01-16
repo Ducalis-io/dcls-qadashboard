@@ -193,23 +193,28 @@ export class JiraClient {
   ): Promise<JiraIssue[]> {
     const logger = getLogger();
     const allIssues: JiraIssue[] = [];
-    let startAt = 0;
-    let totalIssues = 0;
+    let nextPageToken: string | undefined;
+    let pageNumber = 0;
 
     while (true) {
-      // Используем новый API endpoint /search/jql с GET запросом
+      pageNumber++;
+
+      // Используем cursor-based пагинацию с nextPageToken
       const params = new URLSearchParams({
         jql,
-        startAt: String(startAt),
         maxResults: String(maxResults),
       });
+
+      // Если есть токен следующей страницы, используем его вместо startAt
+      if (nextPageToken) {
+        params.append('nextPageToken', nextPageToken);
+      }
 
       // Добавляем поля
       // ВАЖНО: Jira API /search/jql по умолчанию возвращает только IDs
       // Используем '*all' для получения ВСЕХ полей включая кастомные
       if (fields && fields.length > 0) {
         if (fields.includes('*all')) {
-          // Используем '*all' для получения всех полей (включая кастомные)
           params.append('fields', '*all');
         } else {
           params.append('fields', fields.join(','));
@@ -220,25 +225,14 @@ export class JiraClient {
 
       allIssues.push(...result.issues);
 
-      // /search/jql может возвращать либо total, либо isLast
-      if (result.total !== undefined) {
-        totalIssues = result.total;
+      // Логируем прогресс пагинации
+      if (pageNumber > 1 || result.isLast === false) {
+        logger.info(`   📥 Загружено ${allIssues.length} багов (страница ${pageNumber})`);
       }
 
-      // Логируем прогресс пагинации если знаем total
-      if (totalIssues > 0 && totalIssues > maxResults) {
-        const percentage = Math.round((allIssues.length / totalIssues) * 100);
-        logger.info(`   📥 Загружено ${allIssues.length}/${totalIssues} багов (${percentage}%)`);
-      }
-
-      // Проверяем условие выхода: либо isLast=true, либо загружено >= total
+      // Проверяем условие выхода: isLast=true означает последняя страница
       if (result.isLast === true) {
         logger.debug(`[REQ#${this.requestCount}] Pagination complete: isLast=true`);
-        break;
-      }
-
-      if (totalIssues > 0 && allIssues.length >= totalIssues) {
-        logger.debug(`[REQ#${this.requestCount}] Pagination complete: ${allIssues.length} >= ${totalIssues}`);
         break;
       }
 
@@ -248,7 +242,12 @@ export class JiraClient {
         break;
       }
 
-      startAt += maxResults;
+      // Получаем токен для следующей страницы
+      nextPageToken = result.nextPageToken;
+      if (!nextPageToken) {
+        logger.debug(`[REQ#${this.requestCount}] Pagination complete: no nextPageToken`);
+        break;
+      }
     }
 
     return allIssues;

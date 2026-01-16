@@ -28,6 +28,7 @@ export interface JiraSearchResult {
   maxResults?: number;
   startAt?: number;
   isLast?: boolean;      // Используется в /search/jql для пагинации
+  nextPageToken?: string; // Cursor для следующей страницы (cursor-based пагинация)
 }
 
 export interface JiraField {
@@ -168,6 +169,8 @@ export interface DashboardConfig {
   lastUpdated: string;
   // jiraHost removed - sensitive info, not used on frontend
   projectKey: string;
+  sprintsPerPeriod: number;      // Сколько спринтов в одном периоде
+  totalSprintsAnalyzed: number;  // Общее количество анализируемых спринтов
   periods: Array<{
     id: string;
     label: string;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,6 +12,8 @@ import {
   Tooltip,
   Legend,
   TooltipItem,
+  LegendItem,
+  ChartEvent,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { useConfig, useAllPeriodsData } from '@/hooks/useDataSource';
@@ -51,6 +53,7 @@ interface TrendChartProps {
 
 const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
   const [normalize, setNormalize] = useState(false);
+  const [hiddenLabels, setHiddenLabels] = useState<Set<string>>(new Set());
 
   // Загружаем конфигурацию и данные всех периодов через хуки
   const { config, loading: configLoading } = useConfig();
@@ -136,6 +139,27 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
       return color;
     };
 
+    // Функция для затемнения цвета линии (уменьшаем RGB компоненты)
+    const getDarkerColor = (color: string, factor: number = 0.6): string => {
+      // Для rgba формата
+      const rgbaMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+      if (rgbaMatch) {
+        const r = Math.round(parseInt(rgbaMatch[1]) * factor);
+        const g = Math.round(parseInt(rgbaMatch[2]) * factor);
+        const b = Math.round(parseInt(rgbaMatch[3]) * factor);
+        return `rgba(${r}, ${g}, ${b}, 1)`;
+      }
+      // Для hsla формата - уменьшаем lightness
+      const hslaMatch = color.match(/hsla?\((\d+),\s*([\d.]+)%,\s*([\d.]+)%/);
+      if (hslaMatch) {
+        const h = parseInt(hslaMatch[1]);
+        const s = parseFloat(hslaMatch[2]);
+        const l = Math.round(parseFloat(hslaMatch[3]) * factor);
+        return `hsla(${h}, ${s}%, ${l}%, 1)`;
+      }
+      return color;
+    };
+
     // Datasets: один для каждого label
     const datasets = allLabels.map(label => {
       const data = allPeriodsData.map(period => {
@@ -143,25 +167,34 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
         const item = items?.find(i => getLabelKey(i) === label);
 
         if (normalize) {
-          // Процент от общего
-          const total = items?.reduce((sum, i) => sum + (i.count || 0), 0) || 1;
+          // Процент от общего ТОЛЬКО по ВИДИМЫМ labels
+          const total = items?.reduce((sum, i) => {
+            const itemLabel = getLabelKey(i);
+            // Включаем только видимые labels в сумму
+            if (!hiddenLabels.has(itemLabel)) {
+              return sum + (i.count || 0);
+            }
+            return sum;
+          }, 0) || 1;
           return item ? (item.count / total) * 100 : 0;
         }
         return item?.count || 0;
       });
 
       const baseColor = labelColors[label] || 'rgba(128, 128, 128, 1)';
+      const isHidden = hiddenLabels.has(label);
 
       return {
         label,
         data,
-        borderColor: baseColor,
-        backgroundColor: getFillColor(baseColor, 0.90), 
+        borderColor: getDarkerColor(baseColor, 0.5),  // Линия темнее (60% от базового)
+        backgroundColor: getFillColor(baseColor, 0.9), // Заливка светлее и прозрачнее
         fill: true,
         tension: 0.4,
-        pointRadius: 4,
+        pointRadius: 2,
         pointHoverRadius: 6,
-        borderWidth: 2,
+        borderWidth: 1.5,  // Чуть толще для лучшей видимости
+        hidden: isHidden,  // Синхронизируем скрытие с нашим state
       };
     });
 
@@ -169,7 +202,23 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
       labels: periodLabels,
       datasets,
     };
-  }, [allPeriodsData, allLabels, labelColors, config, dataType, getLabelKey, normalize]);
+  }, [allPeriodsData, allLabels, labelColors, config, dataType, getLabelKey, normalize, hiddenLabels]);
+
+  // Обработчик клика по элементу легенды
+  const handleLegendClick = useCallback((_e: ChartEvent, legendItem: LegendItem) => {
+    const label = legendItem.text;
+    if (!label) return;
+
+    setHiddenLabels(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(label)) {
+        newSet.delete(label);
+      } else {
+        newSet.add(label);
+      }
+      return newSet;
+    });
+  }, []);
 
   const options = useMemo(() => ({
     responsive: true,
@@ -186,6 +235,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
           padding: 10,
           font: { size: 11 },
         },
+        onClick: handleLegendClick,  // Кастомный обработчик для пересчёта нормализации
       },
       tooltip: {
         // Сортировка элементов тултипа по убыванию значения (совпадает с визуальным порядком графиков)
@@ -218,7 +268,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
         },
       },
     },
-  }), [normalize]);
+  }), [normalize, handleLegendClick]);
 
   if (loading) {
     return (

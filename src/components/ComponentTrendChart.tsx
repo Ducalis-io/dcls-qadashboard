@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,6 +12,8 @@ import {
   Tooltip,
   Legend,
   TooltipItem,
+  LegendItem,
+  ChartEvent,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { useConfig, useAllPeriodsData } from '@/hooks/useDataSource';
@@ -60,6 +62,7 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
   const [normalize, setNormalize] = useState(false);
   const [threshold, setThreshold] = useState(defaultThreshold);
   const [inputValue, setInputValue] = useState(defaultThreshold.toString());
+  const [hiddenLabels, setHiddenLabels] = useState<Set<string>>(new Set());
 
   // Загружаем конфигурацию и данные всех периодов через хуки
   const { config, loading: configLoading } = useConfig();
@@ -171,46 +174,46 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
 
     periodsComponentData.forEach(({ components }) => {
       let othersCount = 0;
-      let othersPercentage = 0;
 
-      // Значимые компоненты
+      // Собираем count для всех категорий
+      const counts: Record<string, number> = { 'Остальное': 0, 'no_component': 0 };
       significant.forEach((name) => {
-        const data = components.get(name);
-        if (data) {
-          if (normalize) {
-            datasetsMap[name].push(data.percentage);
-          } else {
-            datasetsMap[name].push(data.count);
-          }
-        } else {
-          datasetsMap[name].push(0);
-        }
+        counts[name] = components.get(name)?.count || 0;
       });
+      counts['no_component'] = components.get('no_component')?.count || 0;
 
-      // no_component отдельно
-      const noCompData = components.get('no_component');
-      if (noCompData) {
-        if (normalize) {
-          datasetsMap['no_component'].push(noCompData.percentage);
-        } else {
-          datasetsMap['no_component'].push(noCompData.count);
-        }
-      } else {
-        datasetsMap['no_component'].push(0);
-      }
-
-      // Суммируем "остальное" (всё кроме значимых и no_component)
+      // Суммируем "остальное"
       components.forEach((data, name) => {
         if (!significantSet.has(name) && name !== 'no_component') {
           othersCount += data.count;
-          othersPercentage += data.percentage;
+        }
+      });
+      counts['Остальное'] = othersCount;
+
+      // Вычисляем total ТОЛЬКО из ВИДИМЫХ элементов для нормализации
+      let visibleTotal = 0;
+      Object.entries(counts).forEach(([name, count]) => {
+        if (!hiddenLabels.has(name)) {
+          visibleTotal += count;
+        }
+      });
+      if (visibleTotal === 0) visibleTotal = 1; // Защита от деления на 0
+
+      // Заполняем datasets
+      significant.forEach((name) => {
+        if (normalize) {
+          datasetsMap[name].push((counts[name] / visibleTotal) * 100);
+        } else {
+          datasetsMap[name].push(counts[name]);
         }
       });
 
       if (normalize) {
-        datasetsMap['Остальное'].push(othersPercentage);
+        datasetsMap['no_component'].push((counts['no_component'] / visibleTotal) * 100);
+        datasetsMap['Остальное'].push((counts['Остальное'] / visibleTotal) * 100);
       } else {
-        datasetsMap['Остальное'].push(othersCount);
+        datasetsMap['no_component'].push(counts['no_component']);
+        datasetsMap['Остальное'].push(counts['Остальное']);
       }
     });
 
@@ -222,19 +225,32 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
       return color;
     };
 
+    // Функция для затемнения цвета линии
+    const getDarkerColor = (color: string, factor: number = 0.6): string => {
+      const rgbaMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+      if (rgbaMatch) {
+        const r = Math.round(parseInt(rgbaMatch[1]) * factor);
+        const g = Math.round(parseInt(rgbaMatch[2]) * factor);
+        const b = Math.round(parseInt(rgbaMatch[3]) * factor);
+        return `rgba(${r}, ${g}, ${b}, 1)`;
+      }
+      return color;
+    };
+
     // Порядок: Остальное (первый = внизу), значимые, no_component (последний = вверху)
     const datasetOrder = ['Остальное', ...significant, 'no_component'];
 
     const datasets = datasetOrder.map((name) => ({
       label: name,
       data: datasetsMap[name],
-      borderColor: colors[name],
-      backgroundColor: getFillColor(colors[name], 0.7),
+      borderColor: getDarkerColor(colors[name], 0.5),  // Линия темнее
+      backgroundColor: getFillColor(colors[name], 0.9), // Заливка светлее
       fill: true,
       tension: 0.4,
-      pointRadius: 4,
+      pointRadius: 2,
       pointHoverRadius: 6,
-      borderWidth: 2,
+      borderWidth: 1.5,
+      hidden: hiddenLabels.has(name),  // Синхронизируем с нашим state
     }));
 
     return {
@@ -244,7 +260,23 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
         datasets,
       },
     };
-  }, [allPeriodsData, config, threshold, normalize, envFilter]);
+  }, [allPeriodsData, config, threshold, normalize, envFilter, hiddenLabels]);
+
+  // Обработчик клика по элементу легенды
+  const handleLegendClick = useCallback((_e: ChartEvent, legendItem: LegendItem) => {
+    const label = legendItem.text;
+    if (!label) return;
+
+    setHiddenLabels(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(label)) {
+        newSet.delete(label);
+      } else {
+        newSet.add(label);
+      }
+      return newSet;
+    });
+  }, []);
 
   const options = useMemo(
     () => ({
@@ -262,6 +294,7 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
             padding: 10,
             font: { size: 11 },
           },
+          onClick: handleLegendClick,  // Кастомный обработчик для пересчёта нормализации
         },
         tooltip: {
           // Сортировка элементов тултипа по убыванию значения (совпадает с визуальным порядком графиков)
@@ -295,7 +328,7 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
         },
       },
     }),
-    [normalize]
+    [normalize, handleLegendClick]
   );
 
   if (loading) {

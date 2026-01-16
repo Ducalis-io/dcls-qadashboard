@@ -59,7 +59,7 @@ const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({
   onPeriodChange
 }) => {
   const [envFilter, setEnvFilter] = useState<EnvironmentFilter>('all');
-  const [showTrend, setShowTrend] = useState(false);
+  const [showTrend, setShowTrend] = useState(true);  // По умолчанию Trend
 
   // Фильтруем и пересчитываем данные на основе rawBugs
   const filteredData = useMemo(() => {

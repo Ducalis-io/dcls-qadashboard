@@ -90,7 +90,11 @@ export default function Home() {
           <h1 className="text-3xl font-bold text-gray-900">QA Dashboard</h1>
           <p className="text-gray-600 mt-1">Анализ багов и контроль качества</p>
           <p className="text-gray-500 text-sm mt-1">
-            Данные из Jira: {config.projectKey} | Обновлено: {new Date(config.lastUpdated).toLocaleString('ru-RU')}
+            Данные из Jira: {config.projectKey} |
+            {config.totalSprintsAnalyzed && config.sprintsPerPeriod && (
+              <> Анализ: {config.totalSprintsAnalyzed} спринтов, {config.sprintsPerPeriod} спринта/период | </>
+            )}
+            Обновлено: {new Date(config.lastUpdated).toLocaleString('ru-RU')}
           </p>
         </div>
 

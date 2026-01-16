@@ -60,6 +60,8 @@ export const DashboardConfigSchema = z.object({
   lastUpdated: z.string(),
   // jiraHost removed - sensitive info, not used on frontend
   projectKey: z.string(),
+  sprintsPerPeriod: z.number().optional(),      // Сколько спринтов в одном периоде
+  totalSprintsAnalyzed: z.number().optional(),  // Общее количество анализируемых спринтов
   periods: z.array(PeriodConfigSchema),
   components: z.array(z.string()),
   sprints: z.array(z.object({

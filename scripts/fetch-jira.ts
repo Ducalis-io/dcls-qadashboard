@@ -404,6 +404,8 @@ async function main() {
     lastUpdated: new Date().toISOString(),
     // jiraHost removed - sensitive info, not used on frontend
     projectKey: config.projectKey,
+    sprintsPerPeriod: config.sprintsPerPeriod,
+    totalSprintsAnalyzed: config.maxSprints,
     periods: periods.map((p) => ({
       id: p.id,
       label: p.label,

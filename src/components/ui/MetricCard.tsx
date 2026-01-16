@@ -42,7 +42,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
   tooltipTitle,
   tooltipContent,
   availableModes = ['pie', 'trend'],
-  defaultMode = 'pie',
+  defaultMode = 'trend',
   trendComponent,
   showEnvFilter = false,
   envFilter = 'all',
