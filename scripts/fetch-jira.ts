@@ -240,6 +240,10 @@ async function main() {
       logger.info(`   🏃 Спринты: ${period.sprintNames.join(', ')}`);
     } else if (period.sprintIds && period.sprintIds.length > 0) {
       logger.info(`   🏃 Спринты (ID): ${period.sprintIds.join(', ')}`);
+    } else {
+      // Нет sprintIds - будет использован fallback на даты!
+      logger.warn(`   ⚠️  ВНИМАНИЕ: Нет sprintIds! Используется fallback по датам (created between).`);
+      logger.warn(`   ⚠️  Это покажет только СОЗДАННЫЕ баги, без учёта бэклога спринтов.`);
     }
 
     const jql = getBugsForPeriodJQL(config.projectKey, period);
