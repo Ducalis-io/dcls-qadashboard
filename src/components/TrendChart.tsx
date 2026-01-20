@@ -16,7 +16,7 @@ import {
   ChartEvent,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { useConfig, useAllPeriodsData } from '@/hooks/useDataSource';
+import { useGroupedPeriodsData } from '@/hooks/useDataSource';
 import type { PeriodData } from '@/services/periodDataService';
 import {
   getSeverityColor,
@@ -55,10 +55,8 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
   const [normalize, setNormalize] = useState(false);
   const [hiddenLabels, setHiddenLabels] = useState<Set<string>>(new Set());
 
-  // Загружаем конфигурацию и данные всех периодов через хуки
-  const { config, loading: configLoading } = useConfig();
-  const { data: allPeriodsData, loading: dataLoading } = useAllPeriodsData();
-  const loading = configLoading || dataLoading;
+  // Используем сгруппированные данные из контекста
+  const { data: allPeriodsData, groupedPeriods, multiplier, loading } = useGroupedPeriodsData();
 
   // Функция для получения данных из периода с учетом fallback
   const getDataFromPeriod = (period: PeriodData, type: string): MetricDataItem[] => {
@@ -110,13 +108,13 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
 
   // Подготавливаем данные для графика
   const chartData = useMemo(() => {
-    // X axis: периоды (короткие даты)
-    const periodLabels = config?.periods.map(p => {
+    // X axis: периоды (короткие даты) - используем groupedPeriods
+    const periodLabels = groupedPeriods.map(p => {
       const endDate = p.endDate;
       // Формат: DD.MM
       const [, month, day] = endDate.split('-');
       return `${day}.${month}`;
-    }) || [];
+    });
 
     // Функция для создания цвета заливки с нужной прозрачностью
     const getFillColor = (color: string, opacity: number = 0.5): string => {
@@ -202,7 +200,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
       labels: periodLabels,
       datasets,
     };
-  }, [allPeriodsData, allLabels, labelColors, config, dataType, getLabelKey, normalize, hiddenLabels]);
+  }, [allPeriodsData, allLabels, labelColors, groupedPeriods, dataType, getLabelKey, normalize, hiddenLabels]);
 
   // Обработчик клика по элементу легенды
   const handleLegendClick = useCallback((_e: ChartEvent, legendItem: LegendItem) => {
@@ -303,7 +301,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
 
       {/* График */}
       <div className="h-64">
-        <Line data={chartData} options={options} />
+        <Line key={`trend-${dataType}-${multiplier}`} data={chartData} options={options} />
       </div>
     </div>
   );

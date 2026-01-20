@@ -6,6 +6,7 @@ import ComponentAnalysis from '@/components/ComponentAnalysis'
 import TestCoverage from '@/components/TestCoverage'
 import SprintBacklogChart from '@/components/SprintBacklogChart'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import PeriodMultiplierSelect from '@/components/PeriodMultiplierSelect'
 import { useDashboardData } from '@/hooks/useDataSource'
 
 // Данные для покрытия тестами (пока статичные, можно добавить в JSON позже)
@@ -22,6 +23,7 @@ export default function Home() {
     selectedPeriod,
     changePeriod: setSelectedPeriod,
     loading,
+    effectiveSprintsPerPeriod,
   } = useDashboardData()
 
   const [activeTab, setActiveTab] = useState('overview')
@@ -87,15 +89,20 @@ export default function Home() {
       <div className="max-w-7xl mx-auto p-6">
         {/* Заголовок */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">QA Dashboard</h1>
-          <p className="text-gray-600 mt-1">Анализ багов и контроль качества</p>
-          <p className="text-gray-500 text-sm mt-1">
-            Данные из Jira: {config.projectKey} |
-            {config.totalSprintsAnalyzed && config.sprintsPerPeriod && (
-              <> Анализ: {config.totalSprintsAnalyzed} спринтов, {config.sprintsPerPeriod} спринта/период | </>
-            )}
-            Обновлено: {new Date(config.lastUpdated).toLocaleString('ru-RU')}
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">QA Dashboard</h1>
+              <p className="text-gray-600 mt-1">Анализ багов и контроль качества</p>
+              <p className="text-gray-500 text-sm mt-1">
+                Данные из Jira: {config.projectKey} |
+                {config.totalSprintsAnalyzed && (
+                  <> Анализ: {config.totalSprintsAnalyzed} спринтов, {effectiveSprintsPerPeriod} спринта/период | </>
+                )}
+                Обновлено: {new Date(config.lastUpdated).toLocaleString('ru-RU')}
+              </p>
+            </div>
+            <PeriodMultiplierSelect />
+          </div>
         </div>
 
         {/* Вкладки */}

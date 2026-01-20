@@ -16,7 +16,7 @@ import {
   ChartEvent,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { useConfig, useAllPeriodsData } from '@/hooks/useDataSource';
+import { useGroupedPeriodsData } from '@/hooks/useDataSource';
 
 ChartJS.register(
   CategoryScale,
@@ -64,10 +64,8 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
   const [inputValue, setInputValue] = useState(defaultThreshold.toString());
   const [hiddenLabels, setHiddenLabels] = useState<Set<string>>(new Set());
 
-  // Загружаем конфигурацию и данные всех периодов через хуки
-  const { config, loading: configLoading } = useConfig();
-  const { data: allPeriodsData, loading: dataLoading } = useAllPeriodsData();
-  const loading = configLoading || dataLoading;
+  // Используем сгруппированные данные из контекста
+  const { data: allPeriodsData, groupedPeriods, multiplier, loading } = useGroupedPeriodsData();
 
   // Обработка изменения порога
   const handleThresholdChange = (value: string) => {
@@ -88,8 +86,8 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
     }> = [];
 
     allPeriodsData.forEach((period, index) => {
-      const periodConfig = config?.periods[index];
-      const endDate = periodConfig?.endDate || '';
+      const groupedPeriod = groupedPeriods[index];
+      const endDate = groupedPeriod?.endDate || '';
       const [, month, day] = endDate.split('-');
       const periodLabel = `${day}.${month}`;
 
@@ -260,7 +258,7 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
         datasets,
       },
     };
-  }, [allPeriodsData, config, threshold, normalize, envFilter, hiddenLabels]);
+  }, [allPeriodsData, groupedPeriods, threshold, normalize, envFilter, hiddenLabels]);
 
   // Обработчик клика по элементу легенды
   const handleLegendClick = useCallback((_e: ChartEvent, legendItem: LegendItem) => {
@@ -382,7 +380,7 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
 
       {/* График - увеличенная высота */}
       <div className="h-128" style={{ height: '32rem' }}>
-        <Line data={chartData} options={options} />
+        <Line key={`component-trend-${multiplier}-${envFilter}`} data={chartData} options={options} />
       </div>
 
       {/* Информация о группировке */}

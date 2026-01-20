@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { useConfig } from '@/hooks/useDataSource'
+import { useGroupedPeriods } from '@/contexts/DashboardContext'
 
 interface PeriodSelectorProps {
   selectedPeriod: string
@@ -14,10 +14,10 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   onPeriodChange,
   className = ''
 }) => {
-  // Загружаем конфигурацию с периодами через хук
-  const { config, loading } = useConfig()
+  // Используем сгруппированные периоды из контекста
+  const { groupedPeriods, loading } = useGroupedPeriods()
 
-  if (loading || !config || config.periods.length === 0) {
+  if (loading || groupedPeriods.length === 0) {
     return null
   }
 
@@ -27,7 +27,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
       onChange={(e) => onPeriodChange(e.target.value)}
       className={`border border-gray-300 rounded px-3 py-1 text-sm ${className}`}
     >
-      {config.periods.map((period) => (
+      {groupedPeriods.map((period) => (
         <option key={period.id} value={period.id}>
           {period.label}
         </option>

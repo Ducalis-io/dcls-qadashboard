@@ -23,7 +23,7 @@ export interface PeriodConfig {
   label: string;
   startDate: string;
   endDate: string;
-  dataFile: string;
+  dataFile?: string;
 }
 
 // Используем тип напрямую из Zod схемы для избежания дублирования

@@ -1,1 +1,1 @@
-export { useConfig, usePeriodData, useDashboardData, isCloudflareMode } from './useDataSource';
+export { useConfig, useAllPeriodsData, useDashboardData, useGroupedPeriodsData, isCloudflareMode } from './useDataSource';
