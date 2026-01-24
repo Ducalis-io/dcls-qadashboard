@@ -136,7 +136,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
   const [error, setError] = useState<Error | null>(null);
 
   // Состояния UI
-  const [multiplier, setMultiplierState] = useState(1);
+  const [multiplier, setMultiplierState] = useState(2);
 
   // rawSelectedPeriodId - то что пользователь выбрал (может быть невалидным для текущих groupedPeriods)
   const [rawSelectedPeriodId, setRawSelectedPeriodId] = useState<string | null>(null);
