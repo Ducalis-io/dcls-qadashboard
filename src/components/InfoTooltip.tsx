@@ -92,6 +92,18 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({ title, children }) => {
 
 export default InfoTooltip;
 
+// Описание источников данных (общее для всех карточек)
+const SOURCE_DESCRIPTIONS = (
+  <div className="mt-2 pt-2 border-t border-gray-700">
+    <p className="font-semibold text-blue-300 mb-1 text-xs">Источники данных (переключатель):</p>
+    <ul className="text-xs text-gray-300 space-y-1">
+      <li><strong className="text-white">Бэклог</strong> — баги, назначенные на спринты периода <code className="bg-gray-700 px-1 rounded">Sprint IN (ids)</code></li>
+      <li><strong className="text-white">Созданные</strong> — баги, созданные в даты периода <code className="bg-gray-700 px-1 rounded">created &gt;= ... AND created &lt;= ...</code></li>
+      <li><strong className="text-white">Весь бэклог</strong> — все открытые баги проекта на конец периода <code className="bg-gray-700 px-1 rounded">NOT status WAS IN (&quot;Done&quot;, &quot;RFT&quot;, &quot;Test&quot;)</code></li>
+    </ul>
+  </div>
+);
+
 // Предопределённые описания для секций дашборда
 export const DATA_DESCRIPTIONS = {
   sprintBacklog: {
@@ -99,13 +111,13 @@ export const DATA_DESCRIPTIONS = {
     content: (
       <>
         <p className="mb-2">
-          <strong>Источник:</strong> Исторический подсчёт открытых багов на дату завершения каждого спринта.
+          Исторический подсчёт открытых багов на дату завершения каждого спринта.
         </p>
         <p className="mb-2">
-          <strong>JQL:</strong> <code className="bg-gray-700 px-1 rounded text-xs">created &lt;= &quot;дата&quot; AND NOT status WAS IN (&quot;Done&quot;) BEFORE &quot;дата&quot;</code>
+          <strong>JQL:</strong> <code className="bg-gray-700 px-1 rounded text-xs">created &lt;= &quot;дата&quot; AND NOT status WAS IN (&quot;Done&quot;, &quot;RFT&quot;, &quot;Test&quot;) BEFORE &quot;дата&quot;</code>
         </p>
         <p className="text-yellow-200 text-xs">
-          Показывает сколько багов было открыто (не закрыто) в бэклоге на момент завершения спринта.
+          Баги, которые не были закрыты / не в тестировании на момент завершения спринта. Отдельный источник, не переключается.
         </p>
       </>
     ),
@@ -116,14 +128,9 @@ export const DATA_DESCRIPTIONS = {
     content: (
       <>
         <p className="mb-2">
-          <strong>Источник:</strong> Баги из бэклога спринтов периода.
+          В каком окружении (prod/stage) были обнаружены баги.
         </p>
-        <p className="mb-2">
-          <strong>JQL:</strong> <code className="bg-gray-700 px-1 rounded text-xs">Sprint IN (спринты периода)</code>
-        </p>
-        <p className="text-yellow-200 text-xs">
-          Показывает в каком окружении (prod/stage) были обнаружены баги, которые были назначены на спринты выбранного периода.
-        </p>
+        {SOURCE_DESCRIPTIONS}
       </>
     ),
   },
@@ -133,82 +140,60 @@ export const DATA_DESCRIPTIONS = {
     content: (
       <>
         <p className="mb-2">
-          <strong>Источник:</strong> Баги из бэклога спринтов периода.
+          Текущий статус (Done / In Progress / To Do) багов.
         </p>
-        <p className="mb-2">
-          <strong>JQL:</strong> <code className="bg-gray-700 px-1 rounded text-xs">Sprint IN (спринты периода)</code>
-        </p>
-        <p className="text-yellow-200 text-xs">
-          Показывает текущий статус (Done/In Progress/To Do) багов, которые были в бэклоге спринтов периода.
-        </p>
+        {SOURCE_DESCRIPTIONS}
       </>
     ),
   },
 
   priority: {
-    title: 'Приоритеты багов',
+    title: 'Серьёзность багов',
     content: (
       <>
         <p className="mb-2">
-          <strong>Источник:</strong> Баги из бэклога спринтов периода.
+          Распределение по severity (critical / major / minor и т.д.).
         </p>
-        <p className="mb-2">
-          <strong>JQL:</strong> <code className="bg-gray-700 px-1 rounded text-xs">Sprint IN (спринты периода)</code>
-        </p>
-        <p className="text-yellow-200 text-xs">
-          Распределение по severity (critical/major/minor и т.д.) багов из бэклога спринтов.
-        </p>
+        {SOURCE_DESCRIPTIONS}
       </>
     ),
   },
 
   components: {
-    title: 'Компоненты (созданные в период)',
+    title: 'Компоненты',
     content: (
       <>
         <p className="mb-2">
-          <strong>Источник:</strong> Баги, созданные в даты периода.
-        </p>
-        <p className="mb-2">
-          <strong>JQL:</strong> <code className="bg-gray-700 px-1 rounded text-xs">created &gt;= &quot;начало&quot; AND created &lt;= &quot;конец&quot;</code>
+          Распределение багов по компонентам продукта.
         </p>
         <p className="mb-2 text-green-300 text-xs">
-          <strong>Фильтр Prod:</strong> Показывает какие компоненты пропустили баги на прод (баги найденные на проде).
+          <strong>Фильтр Prod/Stage:</strong> позволяет увидеть какие компоненты пропускают баги на конкретное окружение.
         </p>
-        <p className="text-yellow-200 text-xs">
-          В отличие от других секций, здесь учитываются баги по дате создания, а не по принадлежности к спринту.
-        </p>
+        {SOURCE_DESCRIPTIONS}
       </>
     ),
   },
 
   reasons: {
-    title: 'Причины багов (созданные в период)',
+    title: 'Причины багов',
     content: (
       <>
         <p className="mb-2">
-          <strong>Источник:</strong> Баги, созданные в даты периода.
+          Анализ причин возникновения багов (ошибка в коде, недоработка в требованиях и т.д.).
         </p>
-        <p className="mb-2">
-          <strong>JQL:</strong> <code className="bg-gray-700 px-1 rounded text-xs">created &gt;= &quot;начало&quot; AND created &lt;= &quot;конец&quot;</code>
-        </p>
-        <p className="text-yellow-200 text-xs">
-          Анализ причин возникновения багов (ошибка в коде, недоработка в требованиях и т.д.) по багам созданным в период.
-        </p>
+        {SOURCE_DESCRIPTIONS}
       </>
     ),
   },
 
   trackers: {
-    title: 'Источники багов',
+    title: 'Трекеры багов',
     content: (
       <>
         <p className="mb-2">
-          <strong>Источник:</strong> Баги из бэклога спринтов периода.
-        </p>
-        <p className="text-yellow-200 text-xs">
           Распределение по трекерам/источникам (Jira, GitHub и т.д.).
         </p>
+        {SOURCE_DESCRIPTIONS}
       </>
     ),
   },
@@ -218,7 +203,7 @@ export const DATA_DESCRIPTIONS = {
     content: (
       <>
         <p className="mb-2">
-          <strong>Источник:</strong> Статические данные (TODO: интеграция с системой тестирования).
+          Статические данные (TODO: интеграция с системой тестирования).
         </p>
         <p className="text-yellow-200 text-xs">
           Процент автоматизированных тестов от общего количества тест-кейсов.
