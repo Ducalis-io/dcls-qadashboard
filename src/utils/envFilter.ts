@@ -62,8 +62,14 @@ export function aggregateResolution(bugs: RawBug[]): Array<{ status: string; cou
 export function aggregateComponents(bugs: RawBug[]): Array<{ name: string; count: number }> {
   const counts = new Map<string, number>();
   for (const bug of bugs) {
-    const key = bug.component || 'no_component';
-    counts.set(key, (counts.get(key) || 0) + 1);
+    const comps = bug.components;
+    if (!comps || comps.length === 0) {
+      counts.set('no_component', (counts.get('no_component') || 0) + 1);
+    } else {
+      for (const name of comps) {
+        counts.set(name, (counts.get(name) || 0) + 1);
+      }
+    }
   }
   return Array.from(counts.entries())
     .map(([name, count]) => ({ name, count }))

@@ -24,6 +24,12 @@ cp .env.example .env.local
 # Сбор данных из Jira
 npm run fetch-jira
 
+# Деплой в Cloudflare 
+npm run deploy-data  
+
+# fetch-jira + deploy-data 
+npm run update-kv
+
 # Запуск в режиме разработки
 npm run dev
 ```
@@ -57,7 +63,8 @@ dcls-qadashboard/
 │   ├── components/
 │   │   ├── ui/                   # Базовые UI компоненты (переиспользуемые)
 │   │   │   ├── MetricCard.tsx    # Универсальная карточка метрики
-│   │   │   ├── DataSourceSwitcher.tsx  # Переключатель источника данных
+│   │   │   ├── DataSourceSwitcher.tsx  # Dropdown переключения источника данных
+│   │   │   ├── EnvironmentFilter.tsx  # Dropdown фильтра окружения (Все/Prod/Stage)
 │   │   │   ├── MetricPieChart.tsx
 │   │   │   ├── MetricTable.tsx
 │   │   │   └── ...
@@ -94,6 +101,7 @@ dcls-qadashboard/
 │   │
 │   ├── utils/
 │   │   ├── colors.ts             # Цвета для графиков
+│   │   ├── envFilter.ts          # Фильтрация rawBugs по окружению и агрегация метрик
 │   │   ├── metricAdapters.ts     # Адаптеры данных
 │   │   └── periodMerger.ts       # Утилиты группировки и мёржа периодов
 │   │
@@ -125,7 +133,13 @@ dcls-qadashboard/
 | **created** | Баги, созданные в даты периода | `created >= startDate AND created <= endDate` |
 | **totalBacklog** | Открытые баги проекта на конец периода | `created <= endDate AND NOT status WAS IN ("Done", "RFT", "Test") BEFORE endDate` |
 
-На каждой карточке метрики есть переключатель источника (pill-кнопки «В спринтах» / «Созданные» / «Бэклог»). Это позволяет анализировать одну и ту же метрику (severity, environment и т.д.) с разных точек зрения.
+На каждой карточке метрики есть переключатель источника (dropdown «В спринтах» / «Созданные» / «Бэклог»). Это позволяет анализировать одну и ту же метрику (severity, environment и т.д.) с разных точек зрения.
+
+### Фильтр по окружению (Environment Filter)
+
+Каждая карточка метрики имеет dropdown-фильтр окружения: «Все окружения» / «Prod» / «Stage». При выборе конкретного окружения данные пересчитываются из `rawBugs` — массива минимальных записей о багах, хранящихся в каждом источнике. Фильтрация работает как для pie/bar, так и для trend-графиков.
+
+**Особенность компонентов:** один баг может относиться к нескольким компонентам. При подсчёте по компонентам такой баг учитывается в каждом из них, поэтому сумма по компонентам может превышать общее число багов.
 
 Данные хранятся в расширяемой структуре `sources`:
 
@@ -143,7 +157,7 @@ dcls-qadashboard/
       "components": [...],
       "trackers": [...],
       "reasons": [...],
-      "rawBugs": [...]
+      "rawBugs": [{ "environment": "prod", "components": ["sync", "api"], "severity": "critical", "status": "Done", "reason": "код" }, ...]
     },
     "created": {
       "totalBugs": 18,
@@ -185,13 +199,15 @@ DashboardProvider (единственный источник данных)
 
         ↓
 
-Компоненты (получают sources, управляют activeSource внутри)
+Компоненты (получают sources, управляют activeSource и envFilter внутри)
 ├── page.tsx                    # Передаёт currentData.sources в карточки
 ├── SeverityCard / EnvironmentCard / ...
-│   ├── DataSourceSwitcher      # Переключатель «В спринтах» / «Созданные» / «Бэклог»
+│   ├── DataSourceSwitcher      # Dropdown «В спринтах» / «Созданные» / «Бэклог»
+│   ├── EnvironmentFilter       # Dropdown «Все окружения» / «Prod» / «Stage»
 │   └── MetricCard → TrendChart / PieChart / Table
 ├── ComponentAnalysis
 │   ├── DataSourceSwitcher
+│   ├── EnvironmentFilter
 │   └── ComponentTrendChart
 └── SprintBacklogChart          # Отдельный источник (config.sprints)
 ```
@@ -206,13 +222,15 @@ layout.tsx
         ├── SprintBacklogChart
         ├── ErrorBoundary
         │   └── SeverityCard / EnvironmentCard / ResolutionCard / ...
-        │       ├── DataSourceSwitcher    # Переключатель источника
+        │       ├── DataSourceSwitcher    # Dropdown источника
+        │       ├── EnvironmentFilter     # Dropdown окружения
         │       └── MetricCard (универсальный)
         │           ├── MetricCardHeader + PeriodSelector
         │           ├── MetricPieChart / TrendChart
         │           └── MetricTable
         └── ComponentAnalysis
             ├── DataSourceSwitcher
+            ├── EnvironmentFilter
             └── ComponentTrendChart
 ```
 
@@ -220,11 +238,12 @@ layout.tsx
 
 1. **Единый источник данных** — `DashboardProvider` загружает все данные один раз
 2. **Расширяемые источники** — структура `sources: Record<string, SourceMetrics>` позволяет добавлять новые источники без изменения схемы или компонентов
-3. **Хуки-селекторы** — компоненты получают только нужные данные через хуки
-4. **Унифицированные типы** — `SourceMetrics` единый формат для всех источников, `MetricItem` единый формат для отображения
-5. **Адаптеры** — преобразуют JSON в `MetricItem[]`, вычисляют цвета
-6. **Zod валидация** — типобезопасность на этапе runtime
-7. **Error Boundaries** — ошибка в одной карточке не ломает дашборд
+3. **Кросс-фильтрация** — `rawBugs` хранит минимальный набор полей каждого бага, что позволяет на фронтенде фильтровать по окружению с пересчётом любой метрики (severity, resolution и т.д.)
+4. **Хуки-селекторы** — компоненты получают только нужные данные через хуки
+5. **Унифицированные типы** — `SourceMetrics` единый формат для всех источников, `MetricItem` единый формат для отображения
+6. **Адаптеры** — преобразуют JSON в `MetricItem[]`, вычисляют цвета
+7. **Zod валидация** — типобезопасность на этапе runtime
+8. **Error Boundaries** — ошибка в одной карточке не ломает дашборд
 
 ## Множитель объединения периодов
 
@@ -375,7 +394,7 @@ interface SourceMetrics {
   components: Array<{ name: string; count: number }>;
   trackers: Array<{ name: string; count: number }>;
   reasons: Array<{ reason: string; count: number }>;
-  rawBugs: Array<{ environment?: string; component?: string }>;
+  rawBugs: Array<{ environment?: string; components?: string[]; severity?: string; status?: string; reason?: string }>;
 }
 ```
 
@@ -435,7 +454,7 @@ npm run build
 - Используйте существующие из `ui/`
 - Новые карточки метрик создавайте в `components/metrics/`
 - Оборачивайте карточки в `ErrorBoundary`
-- Карточки получают `sources: Record<string, SourceMetrics>` и управляют `activeSource` внутри
+- Карточки получают `sources: Record<string, SourceMetrics>` и управляют `activeSource` и `envFilter` внутри
 
 ### Данные
 

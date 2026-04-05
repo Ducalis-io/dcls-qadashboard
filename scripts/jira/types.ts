@@ -125,7 +125,7 @@ export interface SprintBugData {
  */
 export interface RawBug {
   environment?: string;
-  component?: string;
+  components?: string[];
   severity?: string;
   status?: string;
   reason?: string;

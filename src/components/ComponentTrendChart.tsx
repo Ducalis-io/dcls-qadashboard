@@ -62,7 +62,7 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
   envFilter = 'all',
   activeSource,
 }) => {
-  const [normalize, setNormalize] = useState(false);
+  const [normalize, setNormalize] = useState(true);
   const [threshold, setThreshold] = useState(defaultThreshold);
   const [inputValue, setInputValue] = useState(defaultThreshold.toString());
   const [hiddenLabels, setHiddenLabels] = useState<Set<string>>(new Set());
@@ -108,8 +108,14 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
 
         const componentCounts = new Map<string, number>();
         filteredBugs.forEach(bug => {
-          const component = bug.component || 'no_component';
-          componentCounts.set(component, (componentCounts.get(component) || 0) + 1);
+          const comps = bug.components;
+          if (!comps || comps.length === 0) {
+            componentCounts.set('no_component', (componentCounts.get('no_component') || 0) + 1);
+          } else {
+            comps.forEach(name => {
+              componentCounts.set(name, (componentCounts.get(name) || 0) + 1);
+            });
+          }
         });
 
         total = filteredBugs.length;

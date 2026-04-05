@@ -175,20 +175,22 @@ export function transformBugsToMetrics(
       env = envValue;
     }
 
-    // Извлекаем component из указанного поля (первый из списка)
-    let componentName = 'no_component';
+    // Извлекаем components (все, не только первый)
+    let componentNames: string[] = [];
     if (componentField) {
       const customValue = issue.fields[componentField];
-      if (Array.isArray(customValue) && customValue.length > 0) {
-        const first = customValue[0];
-        componentName = typeof first === 'string' ? first : (first?.value || first?.name || 'no_component');
+      if (Array.isArray(customValue)) {
+        componentNames = customValue.map((v: any) =>
+          typeof v === 'string' ? v : (v?.value || v?.name || '')
+        ).filter(Boolean);
       } else if (typeof customValue === 'object' && customValue !== null) {
-        componentName = (customValue as any).value || (customValue as any).name || 'no_component';
+        const name = (customValue as any).value || (customValue as any).name || '';
+        if (name) componentNames = [name];
       } else if (typeof customValue === 'string' && customValue.trim()) {
-        componentName = customValue;
+        componentNames = [customValue];
       }
-    } else if (issue.fields.components?.[0]?.name) {
-      componentName = issue.fields.components[0].name;
+    } else {
+      componentNames = (issue.fields.components || []).map((c: any) => c.name).filter(Boolean);
     }
 
     // Извлекаем severity
@@ -222,7 +224,7 @@ export function transformBugsToMetrics(
 
     return {
       environment: env.toLowerCase(),
-      component: componentName,
+      components: componentNames.length > 0 ? componentNames : undefined,
       severity: sev.toLowerCase(),
       status: normalizedStatus,
       reason,

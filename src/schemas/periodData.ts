@@ -19,7 +19,7 @@ export const MetricItemSchema = z.object({
  */
 export const RawBugSchema = z.object({
   environment: z.string().optional(),
-  component: z.string().optional(),
+  components: z.array(z.string()).optional(),
   severity: z.string().optional(),
   status: z.string().optional(),
   reason: z.string().optional(),
