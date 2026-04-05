@@ -7,6 +7,7 @@ import type { DataSourceOption, DataSourceId, MetricField } from '@/types/metric
 export const DATA_SOURCES: DataSourceOption[] = [
   { id: 'backlog', label: 'Бэклог спринтов', shortLabel: 'Бэклог' },
   { id: 'created', label: 'Созданные в период', shortLabel: 'Созданные' },
+  { id: 'totalBacklog', label: 'Весь бэклог проекта', shortLabel: 'Весь бэклог' },
 ];
 
 /**

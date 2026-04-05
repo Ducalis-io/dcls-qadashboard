@@ -28,7 +28,7 @@ const ReasonsCard: React.FC<ReasonsCardProps> = ({
 
   return (
     <MetricCard
-      title="Причины создан��я багов"
+      title="Причины создания багов"
       data={adaptedData}
       tooltipTitle={DATA_DESCRIPTIONS.reasons.title}
       tooltipContent={DATA_DESCRIPTIONS.reasons.content}

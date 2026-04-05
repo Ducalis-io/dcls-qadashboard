@@ -374,6 +374,25 @@ async function main() {
     logger.info(`   📊 Причины (созданные): ${createdMetrics.reasons.length} категорий`);
     logger.info(`   📊 Raw bugs (созданные): ${createdMetrics.rawBugs.length} записей`);
 
+    // === ТРЕТИЙ ЗАПРОС: Весь бэклог проекта на дату окончания периода ===
+    logger.info(`   🔍 Загрузка всего бэклога на дату ${period.endDate}...`);
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const totalBacklogJQL = getOpenBugsAtDateJQL(config.projectKey, period.endDate);
+    logger.logJQL(totalBacklogJQL);
+
+    const totalBacklogStartTime = Date.now();
+    const totalBacklogIssues = await client.searchIssues(totalBacklogJQL);
+    const totalBacklogLoadTime = ((Date.now() - totalBacklogStartTime) / 1000).toFixed(1);
+
+    logger.info(`   ✓ Найдено ${totalBacklogIssues.length} багов в общем бэклоге (${totalBacklogLoadTime}s)`);
+
+    logger.info(`   🔄 Обработка ${totalBacklogIssues.length} багов общего бэклога...`);
+    const totalBacklogMetrics = transformBugsToMetrics(totalBacklogIssues, config.severityField, config.bugReasonField, config.environmentField, config.componentField);
+
+    logger.info(`   📊 Компоненты (общий бэклог): ${totalBacklogMetrics.components.length} категорий`);
+
     // Сохраняем данные периода с вложенной структурой sources
     const periodData: PeriodData = {
       periodId: period.id,
@@ -383,6 +402,7 @@ async function main() {
       sources: {
         backlog: metrics,
         created: createdMetrics,
+        totalBacklog: totalBacklogMetrics,
       },
     };
 

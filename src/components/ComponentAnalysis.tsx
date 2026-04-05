@@ -216,7 +216,7 @@ const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({
           label: (context: TooltipItem<'bar'>) => {
             const value = context.raw as number;
             const percentage = totalBugs > 0 ? ((value / totalBugs) * 100).toFixed(1) : '0.0';
-            return `Ба��о��: ${value} (${percentage}%)`;
+            return `Багов: ${value} (${percentage}%)`;
           }
         }
       }

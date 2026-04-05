@@ -14,7 +14,7 @@ const DataSourceSwitcher: React.FC<DataSourceSwitcherProps> = ({
   activeSource,
   onChange,
 }) => {
-  // Не показ��ваем переключатель если доступен только один источник
+  // Не показываем переключатель если доступен только один источник
   if (sources.length <= 1) return null;
 
   return (

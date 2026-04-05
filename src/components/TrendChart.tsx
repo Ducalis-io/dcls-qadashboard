@@ -237,7 +237,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ metricField, activeSource, getL
         max: normalize ? 100 : undefined,
         title: {
           display: true,
-          text: normalize ? 'Процент (%)' : 'Количест��о',
+          text: normalize ? 'Процент (%)' : 'Количество',
         },
       },
       x: {
