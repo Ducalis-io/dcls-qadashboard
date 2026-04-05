@@ -5,3 +5,4 @@ export { default as MetricCardHeader } from './MetricCardHeader';
 export { default as MetricPieChart } from './MetricPieChart';
 export { default as MetricTable } from './MetricTable';
 export { default as MetricCard } from './MetricCard';
+export { default as DataSourceSwitcher } from './DataSourceSwitcher';

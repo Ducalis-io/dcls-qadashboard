@@ -15,8 +15,11 @@ import {
 import PeriodSelector from '@/components/PeriodSelector';
 import InfoTooltip, { DATA_DESCRIPTIONS } from '@/components/InfoTooltip';
 import ComponentTrendChart from '@/components/ComponentTrendChart';
+import DataSourceSwitcher from '@/components/ui/DataSourceSwitcher';
+import { getAvailableSourcesForMetric } from '@/config/dataSources';
+import type { SourceMetrics } from '@/services/periodDataService';
+import type { DataSourceId } from '@/types/metrics';
 
-// Регистрация необходимых компонентов Chart.js
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -26,49 +29,45 @@ ChartJS.register(
   Legend
 );
 
-// Интерфейс для данных о компонентах (без percentage - вычисляется внутри)
 interface ComponentData {
   name: string;
   count: number;
 }
 
-/**
- * Минимальный набор данных о баге для фильтрации.
- * Удалены: key, summary, status, createdDate (чувствительные данные)
- */
 interface RawBug {
   environment?: string;
   component?: string;
 }
 
-// Тип фильтра окружения
 type EnvironmentFilter = 'all' | 'prod' | 'stage';
 
-// Интерфейс для пропсов компонента
 interface ComponentAnalysisProps {
-  data: ComponentData[];
-  rawBugs?: RawBug[];
+  sources: Record<string, SourceMetrics>;
   selectedPeriod?: string;
   onPeriodChange?: (period: string) => void;
 }
 
 const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({
-  data,
-  rawBugs,
+  sources,
   selectedPeriod,
   onPeriodChange
 }) => {
+  const availableSources = getAvailableSourcesForMetric('components', Object.keys(sources));
+  const [activeSource, setActiveSource] = useState<DataSourceId>(availableSources[0]?.id ?? 'backlog');
   const [envFilter, setEnvFilter] = useState<EnvironmentFilter>('all');
-  const [showTrend, setShowTrend] = useState(true);  // По умолчанию Trend
+  const [showTrend, setShowTrend] = useState(true);
 
-  // Фильтруем и пересчитываем данные на основе rawBugs
+  const sourceData = sources[activeSource];
+
+  // Filter and recalculate data based on rawBugs
   const filteredData = useMemo(() => {
-    // Если нет rawBugs или фильтр "all", используем оригинальные данные
+    const data: ComponentData[] = sourceData?.components || [];
+    const rawBugs: RawBug[] = sourceData?.rawBugs || [];
+
     if (!rawBugs || rawBugs.length === 0 || envFilter === 'all') {
       return data;
     }
 
-    // Фильтруем баги по environment
     const filteredBugs = rawBugs.filter(bug => {
       const env = bug.environment?.toLowerCase() || '';
       if (envFilter === 'prod') {
@@ -80,84 +79,97 @@ const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({
       return true;
     });
 
-    // Пересчитываем компоненты
     const componentCounts = new Map<string, number>();
     filteredBugs.forEach(bug => {
       const component = bug.component || 'no_component';
       componentCounts.set(component, (componentCounts.get(component) || 0) + 1);
     });
 
-    const result: ComponentData[] = Array.from(componentCounts.entries())
-      .map(([name, count]) => ({
-        name,
-        count,
-      }))
+    return Array.from(componentCounts.entries())
+      .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
+  }, [sourceData, envFilter]);
 
-    return result;
-  }, [data, rawBugs, envFilter]);
+  // Header controls (shared between empty and data states)
+  const headerControls = (
+    <div className="flex items-center space-x-2">
+      {availableSources.length > 1 && (
+        <DataSourceSwitcher
+          sources={availableSources}
+          activeSource={activeSource}
+          onChange={setActiveSource}
+        />
+      )}
+      <div className="flex space-x-1">
+        <button
+          onClick={() => setShowTrend(false)}
+          className={`px-2 py-1 text-xs rounded ${!showTrend ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+        >
+          Bar
+        </button>
+        <button
+          onClick={() => setShowTrend(true)}
+          className={`px-2 py-1 text-xs rounded ${showTrend ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+        >
+          Trend
+        </button>
+      </div>
+      <div className="flex space-x-1">
+        <button
+          onClick={() => setEnvFilter('all')}
+          className={`px-2 py-1 text-xs rounded ${envFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+        >
+          Все
+        </button>
+        <button
+          onClick={() => setEnvFilter('prod')}
+          className={`px-2 py-1 text-xs rounded ${envFilter === 'prod' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+        >
+          Prod
+        </button>
+        <button
+          onClick={() => setEnvFilter('stage')}
+          className={`px-2 py-1 text-xs rounded ${envFilter === 'stage' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+        >
+          Stage
+        </button>
+      </div>
+      {!showTrend && onPeriodChange && selectedPeriod && (
+        <PeriodSelector
+          selectedPeriod={selectedPeriod}
+          onPeriodChange={onPeriodChange}
+        />
+      )}
+    </div>
+  );
 
-  // Если нет данных
+  const getTitle = () => {
+    let title = 'Распределение багов по компонентам';
+    if (envFilter === 'prod') {
+      title += ' — только Prod';
+    } else if (envFilter === 'stage') {
+      title += ' — только Stage';
+    }
+    return title;
+  };
+
   if (!filteredData || filteredData.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow overflow-hidden h-full">
         <div className="border-b border-gray-200 p-4">
           <div className="flex justify-between items-center flex-wrap gap-2">
             <h3 className="text-xl font-semibold text-red-800 flex items-center">
-              Распределение багов по компонентам (созданные в период)
+              Распределение багов по компонентам
               <InfoTooltip title={DATA_DESCRIPTIONS.components.title}>
                 {DATA_DESCRIPTIONS.components.content}
               </InfoTooltip>
             </h3>
-            <div className="flex items-center space-x-2">
-              {/* Переключатель Bar/Trend */}
-              <div className="flex space-x-1">
-                <button
-                  onClick={() => setShowTrend(false)}
-                  className={`px-2 py-1 text-xs rounded ${!showTrend ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
-                >
-                  Bar
-                </button>
-                <button
-                  onClick={() => setShowTrend(true)}
-                  className={`px-2 py-1 text-xs rounded ${showTrend ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
-                >
-                  Trend
-                </button>
-              </div>
-              {/* Фильтр по окружению */}
-              <div className="flex space-x-1">
-                <button
-                  onClick={() => setEnvFilter('all')}
-                  className={`px-2 py-1 text-xs rounded ${envFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
-                >
-                  Все
-                </button>
-                <button
-                  onClick={() => setEnvFilter('prod')}
-                  className={`px-2 py-1 text-xs rounded ${envFilter === 'prod' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
-                >
-                  Prod
-                </button>
-                <button
-                  onClick={() => setEnvFilter('stage')}
-                  className={`px-2 py-1 text-xs rounded ${envFilter === 'stage' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
-                >
-                  Stage
-                </button>
-              </div>
-              {!showTrend && onPeriodChange && selectedPeriod && (
-                <PeriodSelector
-                  selectedPeriod={selectedPeriod}
-                  onPeriodChange={onPeriodChange}
-                />
-              )}
-            </div>
+            {headerControls}
           </div>
         </div>
         {showTrend ? (
           <div className="p-6">
-            <ComponentTrendChart envFilter={envFilter} />
+            <ComponentTrendChart envFilter={envFilter} activeSource={activeSource} />
           </div>
         ) : (
           <div className="p-4 text-gray-500 text-center">
@@ -169,13 +181,9 @@ const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({
     );
   }
 
-  // Сортируем данные от большего к меньшему
   const sortedData = [...filteredData].sort((a, b) => b.count - a.count);
-
-  // Рассчитываем общее количество
   const totalBugs = sortedData.reduce((sum, item) => sum + item.count, 0);
 
-  // Подготовка данных для графика
   const chartData = {
     labels: sortedData.map(item => item.name),
     datasets: [
@@ -197,126 +205,54 @@ const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({
     ],
   };
 
-  // Настройки графика
   const chartOptions = {
     indexAxis: 'y' as const,
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        display: false,
-      },
+      legend: { display: false },
       tooltip: {
         callbacks: {
           label: (context: TooltipItem<'bar'>) => {
             const value = context.raw as number;
             const percentage = totalBugs > 0 ? ((value / totalBugs) * 100).toFixed(1) : '0.0';
-            return `Багов: ${value} (${percentage}%)`;
+            return `Ба��о��: ${value} (${percentage}%)`;
           }
         }
       }
     },
     scales: {
-      x: {
-        grid: {
-          display: false
-        },
-        ticks: {
-          precision: 0
-        }
-      },
-      y: {
-        grid: {
-          display: false
-        }
-      }
+      x: { grid: { display: false }, ticks: { precision: 0 } },
+      y: { grid: { display: false } }
     }
-  };
-
-  // Получаем заголовок с учетом фильтра
-  const getTitle = () => {
-    let title = 'Распределение багов по компонентам (созданные в период)';
-    if (envFilter === 'prod') {
-      title += ' — только Prod';
-    } else if (envFilter === 'stage') {
-      title += ' — только Stage';
-    }
-    return title;
   };
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden h-full">
-      {/* Заголовок */}
       <div className="border-b border-gray-200 p-4">
         <div className="flex justify-between items-center flex-wrap gap-2">
           <h3 className="text-xl font-semibold text-red-800 flex items-center">
-            {showTrend ? 'Распределение багов по компонентам (созданные в период)' : getTitle()}
+            {showTrend ? 'Распределение багов по компонентам' : getTitle()}
             <InfoTooltip title={DATA_DESCRIPTIONS.components.title}>
               {DATA_DESCRIPTIONS.components.content}
             </InfoTooltip>
           </h3>
-          <div className="flex items-center space-x-2">
-            {/* Переключатель Bar/Trend */}
-            <div className="flex space-x-1">
-              <button
-                onClick={() => setShowTrend(false)}
-                className={`px-2 py-1 text-xs rounded ${!showTrend ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
-              >
-                Bar
-              </button>
-              <button
-                onClick={() => setShowTrend(true)}
-                className={`px-2 py-1 text-xs rounded ${showTrend ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
-              >
-                Trend
-              </button>
-            </div>
-            {/* Фильтр по окружению */}
-            <div className="flex space-x-1">
-              <button
-                onClick={() => setEnvFilter('all')}
-                className={`px-2 py-1 text-xs rounded ${envFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
-              >
-                Все
-              </button>
-              <button
-                onClick={() => setEnvFilter('prod')}
-                className={`px-2 py-1 text-xs rounded ${envFilter === 'prod' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
-              >
-                Prod
-              </button>
-              <button
-                onClick={() => setEnvFilter('stage')}
-                className={`px-2 py-1 text-xs rounded ${envFilter === 'stage' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
-              >
-                Stage
-              </button>
-            </div>
-            {!showTrend && onPeriodChange && selectedPeriod && (
-              <PeriodSelector
-                selectedPeriod={selectedPeriod}
-                onPeriodChange={onPeriodChange}
-              />
-            )}
-          </div>
+          {headerControls}
         </div>
       </div>
 
-      {/* Trend Chart */}
       {showTrend ? (
         <div className="p-6">
-          <ComponentTrendChart envFilter={envFilter} />
+          <ComponentTrendChart envFilter={envFilter} activeSource={activeSource} />
         </div>
       ) : (
         <>
-          {/* Горизонтальная диаграмма */}
           <div className="p-6">
             <div className="h-96">
               <Bar data={chartData} options={chartOptions} />
             </div>
           </div>
 
-          {/* Таблица данных */}
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white border border-gray-200">
               <thead>
@@ -337,28 +273,16 @@ const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({
                   const percentage = totalBugs > 0 ? ((item.count / totalBugs) * 100) : 0;
                   return (
                     <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                      <td className="py-2 px-4 border-b border-gray-200 text-sm">
-                        {item.name}
-                      </td>
-                      <td className="py-2 px-4 border-b border-gray-200 text-sm text-right">
-                        {item.count}
-                      </td>
-                      <td className="py-2 px-4 border-b border-gray-200 text-sm text-right">
-                        {percentage.toFixed(2)}%
-                      </td>
+                      <td className="py-2 px-4 border-b border-gray-200 text-sm">{item.name}</td>
+                      <td className="py-2 px-4 border-b border-gray-200 text-sm text-right">{item.count}</td>
+                      <td className="py-2 px-4 border-b border-gray-200 text-sm text-right">{percentage.toFixed(2)}%</td>
                     </tr>
                   );
                 })}
                 <tr className="bg-gray-100 font-medium">
-                  <td className="py-2 px-4 border-b border-gray-200 text-sm">
-                    Всего
-                  </td>
-                  <td className="py-2 px-4 border-b border-gray-200 text-sm text-right">
-                    {totalBugs}
-                  </td>
-                  <td className="py-2 px-4 border-b border-gray-200 text-sm text-right">
-                    100.00%
-                  </td>
+                  <td className="py-2 px-4 border-b border-gray-200 text-sm">Всего</td>
+                  <td className="py-2 px-4 border-b border-gray-200 text-sm text-right">{totalBugs}</td>
+                  <td className="py-2 px-4 border-b border-gray-200 text-sm text-right">100.00%</td>
                 </tr>
               </tbody>
             </table>

@@ -32,7 +32,7 @@ npm run dev
 
 ## Режимы работы
 
-Дашборд поддерживает два источника данных:
+Дашборд поддерживает два источника данных для загрузки:
 
 | Режим | Описание | Когда использовать |
 |-------|----------|-------------------|
@@ -57,6 +57,7 @@ dcls-qadashboard/
 │   ├── components/
 │   │   ├── ui/                   # Базовые UI компоненты (переиспользуемые)
 │   │   │   ├── MetricCard.tsx    # Универсальная карточка метрики
+│   │   │   ├── DataSourceSwitcher.tsx  # Переключатель источника данных
 │   │   │   ├── MetricPieChart.tsx
 │   │   │   ├── MetricTable.tsx
 │   │   │   └── ...
@@ -72,6 +73,9 @@ dcls-qadashboard/
 │   │   ├── PeriodMultiplierSelect.tsx # Множитель объединения периодов
 │   │   ├── Providers.tsx             # Client-side providers wrapper
 │   │   └── ErrorBoundary.tsx
+│   │
+│   ├── config/
+│   │   └── dataSources.ts       # Реестр источников данных (backlog, created, ...)
 │   │
 │   ├── contexts/
 │   │   └── DashboardContext.tsx  # Единый источник данных (Provider + хуки)
@@ -111,6 +115,49 @@ dcls-qadashboard/
 
 ## Архитектура
 
+### Источники данных (Data Sources)
+
+Каждая метрика может отображать данные из нескольких источников. Источник данных — это набор багов, отобранных по определённому критерию из Jira.
+
+| Источник | Описание | JQL |
+|----------|----------|-----|
+| **backlog** | Баги в бэклоге спринтов периода | `Sprint IN (sprintIds)` |
+| **created** | Баги, созданные в даты периода | `created >= startDate AND created <= endDate` |
+
+На каждой карточке метрики есть переключатель источника (pill-кнопки «Бэклог» / «Созданные»). Это позволяет анализировать одну и ту же метрику (severity, environment и т.д.) с разных точек зрения.
+
+Данные хранятся в расширяемой структуре `sources`:
+
+```json
+{
+  "periodId": "period1",
+  "startDate": "2025-06-09",
+  "endDate": "2025-06-16",
+  "sources": {
+    "backlog": {
+      "totalBugs": 27,
+      "severity": [{ "label": "critical", "count": 5 }, ...],
+      "environment": [...],
+      "resolution": [...],
+      "components": [...],
+      "trackers": [...],
+      "reasons": [...],
+      "rawBugs": [...]
+    },
+    "created": {
+      "totalBugs": 18,
+      "severity": [...],
+      ...
+    }
+  }
+}
+```
+
+**Добавление нового источника** требует минимальных изменений:
+1. Добавить запись в `src/config/dataSources.ts`
+2. Добавить сбор данных в `scripts/fetch-jira.ts` (записать в `sources.newSourceId`)
+3. Всё остальное (мёржер периодов, переключатели, карточки, тренды) подхватит автоматически
+
 ### Поток данных
 
 ```
@@ -132,11 +179,15 @@ DashboardProvider (единственный источник данных)
 
         ↓
 
-Компоненты
-├── page.tsx
-├── PeriodSelector
-├── TrendChart
-└── ComponentTrendChart
+Компоненты (получают sources, управляют activeSource внутри)
+├── page.tsx                    # Передаёт currentData.sources в карточки
+├── SeverityCard / EnvironmentCard / ...
+│   ├── DataSourceSwitcher      # Переключатель «Бэклог» / «Созданные»
+│   └── MetricCard → TrendChart / PieChart / Table
+├── ComponentAnalysis
+│   ├── DataSourceSwitcher
+│   └── ComponentTrendChart
+└── SprintBacklogChart          # Отдельный источник (config.sprints)
 ```
 
 ### Иерархия компонентов
@@ -149,21 +200,25 @@ layout.tsx
         ├── SprintBacklogChart
         ├── ErrorBoundary
         │   └── SeverityCard / EnvironmentCard / ResolutionCard / ...
+        │       ├── DataSourceSwitcher    # Переключатель источника
         │       └── MetricCard (универсальный)
         │           ├── MetricCardHeader + PeriodSelector
         │           ├── MetricPieChart / TrendChart
         │           └── MetricTable
         └── ComponentAnalysis
+            ├── DataSourceSwitcher
+            └── ComponentTrendChart
 ```
 
 ### Принципы
 
 1. **Единый источник данных** — `DashboardProvider` загружает все данные один раз
-2. **Хуки-селекторы** — компоненты получают только нужные данные через хуки
-3. **Унифицированные типы** — `MetricItem` единый формат для всех метрик
-4. **Адаптеры** — преобразуют JSON в `MetricItem[]`, вычисляют цвета
-5. **Zod валидация** — типобезопасность на этапе runtime
-6. **Error Boundaries** — ошибка в одной карточке не ломает дашборд
+2. **Расширяемые источники** — структура `sources: Record<string, SourceMetrics>` позволяет добавлять новые источники без изменения схемы или компонентов
+3. **Хуки-селекторы** — компоненты получают только нужные данные через хуки
+4. **Унифицированные типы** — `SourceMetrics` единый формат для всех источников, `MetricItem` единый формат для отображения
+5. **Адаптеры** — преобразуют JSON в `MetricItem[]`, вычисляют цвета
+6. **Zod валидация** — типобезопасность на этапе runtime
+7. **Error Boundaries** — ошибка в одной карточке не ломает дашборд
 
 ## Множитель объединения периодов
 
@@ -177,7 +232,7 @@ layout.tsx
 2. По умолчанию множитель = 1 (исходное поведение)
 3. При выборе множителя > 1:
    - Периоды группируются (неполная группа в начале)
-   - Данные суммируются (counts, массивы метрик)
+   - Данные суммируются (counts, массивы метрик) — для каждого источника отдельно
    - PeriodSelector показывает объединённые периоды
    - Графики отображают агрегированные данные
 4. При смене множителя выбранный период не сбрасывается — используется умный поиск соответствия
@@ -227,7 +282,7 @@ NEXT_PUBLIC_API_URL=https://...      # URL Cloudflare Worker
 | `npm run dev` | Запуск dev сервера |
 | `npm run build` | Production сборка |
 | `npm run lint` | Проверка ESLint |
-| `npm run fetch-jira` | Сбор данных из Jira |
+| `npm run fetch-jira` | Сбор данных из Jira (полный) |
 | `npm run fetch-jira:logs` | С детальными логами |
 | `npm run fetch-jira:full` | С логами и HTTP ответами |
 | `npm run deploy-data` | Деплой в Cloudflare KV |
@@ -239,12 +294,37 @@ NEXT_PUBLIC_API_URL=https://...      # URL Cloudflare Worker
 
 1. Загружает закрытые спринты с доски
 2. Группирует спринты в периоды (по N спринтов)
-3. Для каждого периода:
-   - Собирает баги из бэклога спринтов
-   - Собирает баги, созданные в даты периода
-   - Рассчитывает метрики (severity, environment, resolution, components, reasons)
-4. Для каждого спринта считает открытые баги (для графика бэклога)
+3. Для каждого периода собирает **два набора данных** (источника):
+   - **backlog** — баги из бэклога спринтов (полный набор метрик: severity, environment, resolution, components, trackers, reasons)
+   - **created** — баги, созданные в даты периода (тот же полный набор метрик)
+4. Для каждого спринта считает открытые баги в бэклоге проекта (для графика бэклога), исключая статусы Done, RFT, Test
 5. Сохраняет в `src/data/`
+
+### Частичный сбор данных
+
+Полный сбор может занимать длительное время. Для досбора отдельных периодов используйте флаг `--periods`:
+
+```bash
+# Досбор конкретных периодов
+npm run fetch-jira -- --periods 39,40
+
+# Диапазон периодов
+npm run fetch-jira -- --periods 35-40
+
+# Комбинация
+npm run fetch-jira -- --periods 38,39-40
+
+# С логами
+npm run fetch-jira -- --periods 39,40 --logs
+
+# Пропустить сбор данных спринтов (график бэклога)
+npm run fetch-jira -- --skip-sprints
+```
+
+В частичном режиме (`--periods`):
+- Старые файлы периодов **не удаляются**
+- Данные спринтов для графика бэклога **берутся из существующего config.json**
+- config.json обновляется с сохранением информации обо всех периодах
 
 ## Структура данных
 
@@ -268,14 +348,26 @@ NEXT_PUBLIC_API_URL=https://...      # URL Cloudflare Worker
 ```typescript
 {
   periodId: string;
-  startDate: string;            // YYYY-MM-DD
+  startDate: string;              // YYYY-MM-DD
   endDate: string;
+  generatedAt: string;
+  sources: {
+    backlog: SourceMetrics;       // Баги в бэклоге спринтов
+    created: SourceMetrics;       // Баги, созданные в период
+    // ... будущие источники добавляются как новые ключи
+  }
+}
+
+// SourceMetrics — единая структура для любого источника
+interface SourceMetrics {
   totalBugs: number;
   severity: Array<{ label: string; count: number }>;
   environment: Array<{ environment: string; count: number }>;
   resolution: Array<{ status: string; count: number }>;
   components: Array<{ name: string; count: number }>;
-  // ... и другие метрики
+  trackers: Array<{ name: string; count: number }>;
+  reasons: Array<{ reason: string; count: number }>;
+  rawBugs: Array<{ environment?: string; component?: string }>;
 }
 ```
 
@@ -335,6 +427,7 @@ npm run build
 - Используйте существующие из `ui/`
 - Новые карточки метрик создавайте в `components/metrics/`
 - Оборачивайте карточки в `ErrorBoundary`
+- Карточки получают `sources: Record<string, SourceMetrics>` и управляют `activeSource` внутри
 
 ### Данные
 
@@ -357,14 +450,21 @@ npm run build
 
 ## FAQ
 
+### Как добавить новый источник данных?
+
+1. Добавьте запись в `src/config/dataSources.ts` (id, label, shortLabel)
+2. Добавьте сбор данных в `scripts/fetch-jira.ts` — запишите результат `transformBugsToMetrics()` в `sources.yourSourceId`
+3. Готово — переключатели на карточках, мёржер периодов и тренды подхватят новый источник автоматически
+
 ### Как добавить новую метрику?
 
-1. Добавьте поле в `scripts/jira/types.ts`
-2. Обновите `scripts/jira/transformers.ts`
-3. Обновите `src/schemas/periodData.ts`
-4. Добавьте цвета в `src/utils/colors.ts`
-5. Создайте адаптер в `src/utils/metricAdapters.ts`
-6. Создайте карточку в `src/components/metrics/`
+1. Добавьте поле в `SourceMetrics` в `scripts/jira/types.ts` и `src/services/periodDataService.ts`
+2. Обновите `scripts/jira/transformers.ts` (функция `transformBugsToMetrics`)
+3. Обновите `src/schemas/periodData.ts` (схема `SourceMetricsSchema`)
+4. Обновите `src/utils/periodMerger.ts` (ключ-функция в `METRIC_KEY_EXTRACTORS` и `mergeSourceMetrics`)
+5. Добавьте цвета в `src/utils/colors.ts`
+6. Создайте адаптер в `src/utils/metricAdapters.ts`
+7. Создайте карточку в `src/components/metrics/`
 
 ### Как скрыть секцию?
 
@@ -377,6 +477,12 @@ npm run build
 ### Как объединить периоды на UI?
 
 Используйте select "Объединение" в шапке дашборда. Выберите множитель 2-4 для группировки периодов.
+
+### Как досбрать отдельные периоды?
+
+```bash
+npm run fetch-jira -- --periods 39,40
+```
 
 ### Как отладить сбор данных?
 

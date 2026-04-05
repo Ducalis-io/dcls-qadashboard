@@ -1,30 +1,30 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { MetricCard } from '@/components/ui';
 import TrendChart from '@/components/TrendChart';
 import { DATA_DESCRIPTIONS } from '@/components/InfoTooltip';
 import { adaptResolutionData } from '@/utils/metricAdapters';
-
-interface ResolutionData {
-  status: string;
-  count: number;
-}
+import { getAvailableSourcesForMetric } from '@/config/dataSources';
+import type { SourceMetrics } from '@/services/periodDataService';
+import type { DataSourceId } from '@/types/metrics';
 
 interface ResolutionCardProps {
-  data: ResolutionData[];
-  totalBugs: number;
+  sources: Record<string, SourceMetrics>;
   selectedPeriod?: string;
   onPeriodChange?: (period: string) => void;
 }
 
 const ResolutionCard: React.FC<ResolutionCardProps> = ({
-  data,
-  totalBugs,
+  sources,
   selectedPeriod,
   onPeriodChange,
 }) => {
-  const adaptedData = adaptResolutionData(data, totalBugs);
+  const availableSources = getAvailableSourcesForMetric('resolution', Object.keys(sources));
+  const [activeSource, setActiveSource] = useState<DataSourceId>(availableSources[0]?.id ?? 'backlog');
+
+  const sourceData = sources[activeSource];
+  const adaptedData = sourceData ? adaptResolutionData(sourceData.resolution, sourceData.totalBugs) : [];
 
   return (
     <MetricCard
@@ -33,10 +33,13 @@ const ResolutionCard: React.FC<ResolutionCardProps> = ({
       tooltipTitle={DATA_DESCRIPTIONS.resolution.title}
       tooltipContent={DATA_DESCRIPTIONS.resolution.content}
       availableModes={['pie', 'trend']}
+      availableSources={availableSources}
+      activeSource={activeSource}
+      onSourceChange={setActiveSource}
       selectedPeriod={selectedPeriod}
       onPeriodChange={onPeriodChange}
       trendComponent={
-        <TrendChart dataType="resolution" getLabelKey={(item) => item.status || ''} />
+        <TrendChart metricField="resolution" activeSource={activeSource} getLabelKey={(item) => item.status || ''} />
       }
     />
   );

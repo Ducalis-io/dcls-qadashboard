@@ -29,57 +29,25 @@ export interface PeriodConfig {
 // Используем тип напрямую из Zod схемы для избежания дублирования
 export type DashboardConfig = ValidatedDashboardConfig;
 
-// Типы данных из JSON (без color и percentage - вычисляются на фронте)
+/** Полный набор метрик для одного источника данных */
+export interface SourceMetrics {
+  totalBugs: number;
+  severity: Array<{ label: string; count: number }>;
+  environment: Array<{ environment: string; count: number }>;
+  resolution: Array<{ status: string; count: number }>;
+  components: Array<{ name: string; count: number }>;
+  trackers: Array<{ name: string; count: number }>;
+  reasons: Array<{ reason: string; count: number }>;
+  rawBugs: Array<{ environment?: string; component?: string }>;
+}
+
+// Типы данных из JSON
 export interface PeriodData {
   periodId: string;
   startDate: string;
   endDate: string;
   generatedAt: string;
-  totalBugs: number;
-  severity: Array<{
-    label: string;
-    count: number;
-  }>;
-  environment: Array<{
-    environment: string;
-    count: number;
-  }>;
-  resolution: Array<{
-    status: string;
-    count: number;
-  }>;
-  components: Array<{
-    name: string;
-    count: number;
-  }>;
-  trackers: Array<{
-    name: string;
-    count: number;
-  }>;
-  reasons: Array<{
-    reason: string;
-    count: number;
-  }>;
-  // Минимальный набор для фильтрации на фронтенде
-  rawBugs: Array<{
-    environment?: string;
-    component?: string;
-  }>;
-  // Данные по багам, созданным в период (для компонентов и причин)
-  totalBugsCreated?: number;
-  componentsCreated?: Array<{
-    name: string;
-    count: number;
-  }>;
-  reasonsCreated?: Array<{
-    reason: string;
-    count: number;
-  }>;
-  // Минимальный набор для фильтрации на фронтенде
-  rawBugsCreated?: Array<{
-    environment?: string;
-    component?: string;
-  }>;
+  sources: Record<string, SourceMetrics>;
 }
 
 /**
@@ -164,9 +132,12 @@ export function getAggregatedComponentData(periodIds: string[]): {
   periodIds.forEach((periodId) => {
     const data = getPeriodData(periodId);
     if (data) {
-      data.components.forEach((comp) => {
-        componentMap.set(comp.name, (componentMap.get(comp.name) || 0) + comp.count);
-      });
+      const source = data.sources['backlog'];
+      if (source) {
+        source.components.forEach((comp) => {
+          componentMap.set(comp.name, (componentMap.get(comp.name) || 0) + comp.count);
+        });
+      }
     }
   });
 

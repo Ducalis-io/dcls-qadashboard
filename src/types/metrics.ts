@@ -24,6 +24,25 @@ export interface MetricData {
 }
 
 /**
+ * Идентификатор источника данных
+ */
+export type DataSourceId = string; // 'backlog' | 'created' | ... extensible
+
+/**
+ * Описание источника данных для UI
+ */
+export interface DataSourceOption {
+  id: DataSourceId;
+  label: string;       // Полное название: "Бэклог спринтов"
+  shortLabel: string;  // Короткое для кнопок: "Бэклог"
+}
+
+/**
+ * Названия полей метрик внутри SourceMetrics
+ */
+export type MetricField = 'severity' | 'environment' | 'resolution' | 'components' | 'trackers' | 'reasons';
+
+/**
  * Конфигурация колонки таблицы
  */
 export interface TableColumn {

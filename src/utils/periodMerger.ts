@@ -2,7 +2,7 @@
  * Утилиты для группировки и объединения периодов
  */
 
-import type { PeriodConfig, PeriodData } from '@/services/periodDataService';
+import type { PeriodConfig, PeriodData, SourceMetrics } from '@/services/periodDataService';
 
 // === Типы ===
 
@@ -110,11 +110,45 @@ export function createGroupedPeriodConfigs(
   });
 }
 
+// === Объединение метрик одного источника ===
+
+/**
+ * Ключ-функции для мёржа массивов метрик.
+ * Ключ извлекает идентифицирующее поле из элемента.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const METRIC_KEY_EXTRACTORS: Record<string, (item: any) => string> = {
+  severity: (item) => item.label || '',
+  environment: (item) => item.environment || '',
+  resolution: (item) => item.status || '',
+  components: (item) => item.name || '',
+  trackers: (item) => item.name || '',
+  reasons: (item) => item.reason || '',
+};
+
+/**
+ * Объединяет SourceMetrics из нескольких периодов в один.
+ */
+function mergeSourceMetrics(metricsList: SourceMetrics[]): SourceMetrics {
+  if (metricsList.length === 1) return metricsList[0];
+
+  return {
+    totalBugs: metricsList.reduce((sum, m) => sum + m.totalBugs, 0),
+    severity: mergeArraysByKey(metricsList.map(m => m.severity), METRIC_KEY_EXTRACTORS.severity),
+    environment: mergeArraysByKey(metricsList.map(m => m.environment), METRIC_KEY_EXTRACTORS.environment),
+    resolution: mergeArraysByKey(metricsList.map(m => m.resolution), METRIC_KEY_EXTRACTORS.resolution),
+    components: mergeArraysByKey(metricsList.map(m => m.components), METRIC_KEY_EXTRACTORS.components),
+    trackers: mergeArraysByKey(metricsList.map(m => m.trackers), METRIC_KEY_EXTRACTORS.trackers),
+    reasons: mergeArraysByKey(metricsList.map(m => m.reasons), METRIC_KEY_EXTRACTORS.reasons),
+    rawBugs: metricsList.flatMap(m => m.rawBugs),
+  };
+}
+
 // === Объединение данных периодов ===
 
 /**
  * Объединяет данные нескольких периодов в один.
- * Суммирует counts, объединяет массивы.
+ * Итерирует по всем source keys и мёржит каждый отдельно.
  */
 export function mergePeriodData(periodsData: PeriodData[]): PeriodData {
   if (periodsData.length === 0) {
@@ -128,73 +162,32 @@ export function mergePeriodData(periodsData: PeriodData[]): PeriodData {
   const first = periodsData[0];
   const last = periodsData[periodsData.length - 1];
 
-  // Суммируем totalBugs
-  const totalBugs = periodsData.reduce((sum, p) => sum + p.totalBugs, 0);
-  const totalBugsCreated = periodsData.reduce((sum, p) => sum + (p.totalBugsCreated || 0), 0);
+  // Собираем все source keys из всех периодов
+  const allSourceKeys = new Set<string>();
+  periodsData.forEach(p => {
+    if (p.sources) {
+      Object.keys(p.sources).forEach(k => allSourceKeys.add(k));
+    }
+  });
 
-  // Мёржим массивы метрик
-  const severity = mergeArraysByKey(
-    periodsData.map(p => p.severity),
-    item => item.label || ''
-  );
+  // Мёржим каждый source отдельно
+  const sources: Record<string, SourceMetrics> = {};
+  for (const sourceKey of allSourceKeys) {
+    const metricsList = periodsData
+      .map(p => p.sources?.[sourceKey])
+      .filter((m): m is SourceMetrics => m !== undefined && m !== null);
 
-  const environment = mergeArraysByKey(
-    periodsData.map(p => p.environment),
-    item => item.environment || ''
-  );
-
-  const resolution = mergeArraysByKey(
-    periodsData.map(p => p.resolution),
-    item => item.status || ''
-  );
-
-  const components = mergeArraysByKey(
-    periodsData.map(p => p.components),
-    item => item.name || ''
-  );
-
-  const trackers = mergeArraysByKey(
-    periodsData.map(p => p.trackers),
-    item => item.name || ''
-  );
-
-  const reasons = mergeArraysByKey(
-    periodsData.map(p => p.reasons),
-    item => item.reason || ''
-  );
-
-  // Мёржим componentsCreated и reasonsCreated
-  const componentsCreated = mergeArraysByKey(
-    periodsData.map(p => p.componentsCreated || []),
-    item => item.name || ''
-  );
-
-  const reasonsCreated = mergeArraysByKey(
-    periodsData.map(p => p.reasonsCreated || []),
-    item => item.reason || ''
-  );
-
-  // Объединяем rawBugs и rawBugsCreated
-  const rawBugs = periodsData.flatMap(p => p.rawBugs);
-  const rawBugsCreated = periodsData.flatMap(p => p.rawBugsCreated || []);
+    if (metricsList.length > 0) {
+      sources[sourceKey] = mergeSourceMetrics(metricsList);
+    }
+  }
 
   return {
     periodId: `${first.periodId}-${last.periodId}`,
     startDate: first.startDate,
     endDate: last.endDate,
     generatedAt: new Date().toISOString(),
-    totalBugs,
-    severity,
-    environment,
-    resolution,
-    components,
-    trackers,
-    reasons,
-    rawBugs,
-    totalBugsCreated: totalBugsCreated > 0 ? totalBugsCreated : undefined,
-    componentsCreated: componentsCreated.length > 0 ? componentsCreated : undefined,
-    reasonsCreated: reasonsCreated.length > 0 ? reasonsCreated : undefined,
-    rawBugsCreated: rawBugsCreated.length > 0 ? rawBugsCreated : undefined,
+    sources,
   };
 }
 

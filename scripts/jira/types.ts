@@ -134,11 +134,11 @@ export interface RawBug {
   component?: string;
 }
 
-export interface PeriodData {
-  periodId: string;
-  startDate: string;
-  endDate: string;
-  generatedAt: string;
+/**
+ * Полный набор метрик для одного источника данных.
+ * Одинаковая структура для backlog, created и любых будущих источников.
+ */
+export interface SourceMetrics {
   totalBugs: number;
   severity: SeverityData[];
   environment: EnvironmentData[];
@@ -147,11 +147,14 @@ export interface PeriodData {
   trackers: TrackerData[];
   reasons: ReasonData[];
   rawBugs: RawBug[];
-  // Данные по багам, созданным в период (для компонентов и причин)
-  totalBugsCreated?: number;
-  componentsCreated?: ComponentData[];
-  reasonsCreated?: ReasonData[];
-  rawBugsCreated?: RawBug[];
+}
+
+export interface PeriodData {
+  periodId: string;
+  startDate: string;
+  endDate: string;
+  generatedAt: string;
+  sources: Record<string, SourceMetrics>;
 }
 
 export interface SectionVisibility {

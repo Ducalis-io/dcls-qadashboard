@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, ReactNode } from 'react';
-import { MetricItem, ChartMode, EnvironmentFilter as FilterType, TableColumn } from '@/types/metrics';
+import { MetricItem, ChartMode, EnvironmentFilter as FilterType, TableColumn, DataSourceOption, DataSourceId } from '@/types/metrics';
 import MetricCardHeader from './MetricCardHeader';
 import MetricPieChart from './MetricPieChart';
 import MetricTable from './MetricTable';
 import ChartModeToggle from './ChartModeToggle';
+import DataSourceSwitcher from './DataSourceSwitcher';
 import EnvironmentFilter from './EnvironmentFilter';
 import EmptyState from './EmptyState';
 import PeriodSelector from '@/components/PeriodSelector';
@@ -21,6 +22,11 @@ interface MetricCardProps {
   defaultMode?: ChartMode;
 
   trendComponent?: ReactNode;
+
+  // Data source switching
+  availableSources?: DataSourceOption[];
+  activeSource?: DataSourceId;
+  onSourceChange?: (id: DataSourceId) => void;
 
   showEnvFilter?: boolean;
   envFilter?: FilterType;
@@ -44,6 +50,9 @@ const MetricCard: React.FC<MetricCardProps> = ({
   availableModes = ['pie', 'trend'],
   defaultMode = 'trend',
   trendComponent,
+  availableSources,
+  activeSource,
+  onSourceChange,
   showEnvFilter = false,
   envFilter = 'all',
   onEnvFilterChange,
@@ -66,6 +75,14 @@ const MetricCard: React.FC<MetricCardProps> = ({
         tooltipTitle={tooltipTitle}
         tooltipContent={tooltipContent}
       >
+        {availableSources && activeSource && onSourceChange && (
+          <DataSourceSwitcher
+            sources={availableSources}
+            activeSource={activeSource}
+            onChange={onSourceChange}
+          />
+        )}
+
         {availableModes.length > 1 && (
           <ChartModeToggle
             mode={mode}

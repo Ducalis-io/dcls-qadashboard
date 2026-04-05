@@ -1,10 +1,18 @@
 /**
  * Скрипт сбора данных из Jira
- * Запуск: npm run fetch-jira [--logs] [--resp]
+ * Запуск: npm run fetch-jira [--logs] [--resp] [--periods N,M] [--skip-sprints]
  *
  * Опции:
- *   --logs  Записывать детальные логи в файл logs/fetch-jira.log
- *   --resp  Сохранять HTTP респонсы в папку logs/responses/
+ *   --logs            Записывать детальные логи в файл logs/fetch-jira.log
+ *   --resp            Сохранять HTTP респонсы в папку logs/responses/
+ *   --periods 39,40   Собрать только указанные периоды (не очищает старые файлы)
+ *   --periods 35-40   Диапазон периодов
+ *   --skip-sprints    Пропустить сбор данных спринтов для графика бэклога
+ *
+ * Примеры:
+ *   npm run fetch-jira -- --periods 39,40          # Досбор периодов 39 и 40
+ *   npm run fetch-jira -- --periods 35-40 --logs   # Периоды 35-40 с логами
+ *   npm run fetch-jira -- --skip-sprints           # Полный сбор без графика бэклога
  *
  * Собирает баги из Jira, группирует по периодам (по спринтам)
  * и сохраняет в src/data/ для использования в дашборде
@@ -16,7 +24,7 @@ import * as dotenv from 'dotenv';
 import { JiraClient } from './jira/client';
 import { getJiraConfigFromEnv, createPeriodsFromSprints } from './jira/config';
 import { getBugsForPeriodJQL, getOpenBugsAtDateJQL, getBugsInDateRangeJQL } from './jira/queries';
-import { transformBugsToMetrics, extractSprintData, extractComponentsAndReasons } from './jira/transformers';
+import { transformBugsToMetrics, extractSprintData } from './jira/transformers';
 import type { PeriodConfig, DashboardConfig, PeriodData, SprintBugData, JiraSprint, SectionVisibility } from './jira/types';
 import { initLogger, getLogger, closeLogger } from './jira/logger';
 
@@ -31,6 +39,40 @@ const LOGS_DIR = path.join(__dirname, '../logs');
 const args = process.argv.slice(2);
 const enableLogs = args.includes('--logs');
 const enableResp = args.includes('--resp');
+const skipSprints = args.includes('--skip-sprints');
+
+/**
+ * Парсит флаг --periods для выборочного сбора.
+ * Форматы: --periods 39,40  |  --periods 39-40  |  --periods 38,39-40
+ * Возвращает null если флаг не указан (= собирать все).
+ */
+function parsePeriodsFilter(): Set<number> | null {
+  const idx = args.indexOf('--periods');
+  if (idx === -1 || idx + 1 >= args.length) return null;
+
+  const value = args[idx + 1];
+  const result = new Set<number>();
+
+  for (const part of value.split(',')) {
+    const trimmed = part.trim();
+    if (trimmed.includes('-')) {
+      const [startStr, endStr] = trimmed.split('-');
+      const start = parseInt(startStr);
+      const end = parseInt(endStr);
+      if (!isNaN(start) && !isNaN(end)) {
+        for (let i = start; i <= end; i++) result.add(i);
+      }
+    } else {
+      const num = parseInt(trimmed);
+      if (!isNaN(num)) result.add(num);
+    }
+  }
+
+  return result.size > 0 ? result : null;
+}
+
+const periodsFilter = parsePeriodsFilter();
+const isPartialMode = periodsFilter !== null;
 
 /**
  * Собирает данные о багах в бэклоге для каждого закрытого спринта
@@ -116,8 +158,8 @@ async function main() {
     });
   }
 
-  // Очищаем старые файлы периодов
-  if (fs.existsSync(PERIODS_DIR)) {
+  // Очищаем старые файлы периодов (только в полном режиме)
+  if (!isPartialMode && fs.existsSync(PERIODS_DIR)) {
     const files = fs.readdirSync(PERIODS_DIR);
     files.forEach(file => {
       if (file.endsWith('.json')) {
@@ -141,13 +183,19 @@ async function main() {
   console.log('='.repeat(60));
   console.log('');
 
+  if (isPartialMode) {
+    console.log(`🎯 Частичный сбор: периоды ${Array.from(periodsFilter!).sort((a, b) => a - b).join(', ')}`);
+    if (skipSprints) {
+      console.log(`⏭️  Сбор спринтов пропущен (--skip-sprints)`);
+    }
+  }
   if (enableLogs) {
     console.log(`📝 Детальные логи: ${logFilePath}`);
   }
   if (enableResp) {
     console.log(`💾 HTTP респонсы: ${responsesDir}`);
   }
-  if (enableLogs || enableResp) {
+  if (enableLogs || enableResp || isPartialMode) {
     console.log('');
   }
 
@@ -225,15 +273,37 @@ async function main() {
     process.exit(1);
   }
 
+  // В частичном режиме подгружаем компоненты из существующего config
   const allComponents = new Set<string>();
+  if (isPartialMode) {
+    const existingConfigPath = path.join(DATA_DIR, 'config.json');
+    if (fs.existsSync(existingConfigPath)) {
+      const existingConfig = JSON.parse(fs.readFileSync(existingConfigPath, 'utf-8'));
+      (existingConfig.components || []).forEach((c: string) => allComponents.add(c));
+    }
+  }
+
   const periodStats: Array<{ period: string; bugs: number; time: number }> = [];
   const overallStartTime = Date.now();
 
-  // Обрабатываем каждый период
-  for (let i = 0; i < periods.length; i++) {
+  // Фильтруем периоды если указан --periods
+  const periodsToProcess = isPartialMode
+    ? periods.filter(p => {
+        const num = parseInt(p.id.replace('period', ''));
+        return periodsFilter!.has(num);
+      })
+    : periods;
+
+  if (isPartialMode) {
+    logger.info(`🎯 Будет обработано ${periodsToProcess.length} из ${periods.length} периодов`);
+    logger.info('');
+  }
+
+  // Обрабатываем периоды
+  for (let i = 0; i < periodsToProcess.length; i++) {
     const periodStartTime = Date.now();
-    const period = periods[i];
-    logger.logPeriod(i + 1, periods.length, period.label);
+    const period = periodsToProcess[i];
+    logger.logPeriod(i + 1, periodsToProcess.length, period.label);
 
     // Показываем спринты, которые будут обработаны
     if (period.sprintNames && period.sprintNames.length > 0) {
@@ -293,13 +363,9 @@ async function main() {
 
     logger.info(`   ✓ Найдено ${createdIssues.length} багов созданных в период (${createdLoadTime}s)`);
 
-    // Извлекаем компоненты, причины и rawBugs из багов созданных в период
-    const createdMetrics = extractComponentsAndReasons(
-      createdIssues,
-      config.bugReasonField,
-      config.componentField,
-      config.environmentField
-    );
+    // Полный transform для багов, созданных в период (тот же набор метрик что и для бэклога)
+    logger.info(`   🔄 Обработка ${createdIssues.length} созданных багов...`);
+    const createdMetrics = transformBugsToMetrics(createdIssues, config.severityField, config.bugReasonField, config.environmentField, config.componentField);
 
     // Собираем все компоненты (из созданных)
     createdMetrics.components.forEach((c) => allComponents.add(c.name));
@@ -308,18 +374,16 @@ async function main() {
     logger.info(`   📊 Причины (созданные): ${createdMetrics.reasons.length} категорий`);
     logger.info(`   📊 Raw bugs (созданные): ${createdMetrics.rawBugs.length} записей`);
 
-    // Сохраняем данные периода
+    // Сохраняем данные периода с вложенной структурой sources
     const periodData: PeriodData = {
       periodId: period.id,
       startDate: period.startDate,
       endDate: period.endDate,
       generatedAt: new Date().toISOString(),
-      ...metrics,
-      // Добавляем данные по багам, созданным в период
-      totalBugsCreated: createdMetrics.total,
-      componentsCreated: createdMetrics.components,
-      reasonsCreated: createdMetrics.reasons,
-      rawBugsCreated: createdMetrics.rawBugs,
+      sources: {
+        backlog: metrics,
+        created: createdMetrics,
+      },
     };
 
     const periodFilePath = path.join(PERIODS_DIR, `${period.id}.json`);
@@ -343,7 +407,7 @@ async function main() {
 
     // Показываем общий прогресс и оценку времени
     const completedPeriods = i + 1;
-    const totalPeriods = periods.length;
+    const totalPeriods = periodsToProcess.length;
     const progressPercent = Math.round((completedPeriods / totalPeriods) * 100);
     const avgTimePerPeriod = periodStats.reduce((sum, s) => sum + s.time, 0) / periodStats.length;
     const remainingPeriods = totalPeriods - completedPeriods;
@@ -360,11 +424,20 @@ async function main() {
     }
   }
 
-  // Собираем данные спринтов для графика бэклога
+  // Собираем данные спринтов для графика бэклога (пропускаем в частичном режиме или с --skip-sprints)
   let sprintBacklogData: SprintBugData[] = [];
-  if (config.boardId) {
+  if (isPartialMode || skipSprints) {
+    logger.info('');
+    logger.info('⏭️  Сбор данных спринтов пропущен (частичный режим)');
+    // Берём данные из существующего config
+    const existingConfigPath = path.join(DATA_DIR, 'config.json');
+    if (fs.existsSync(existingConfigPath)) {
+      const existingConfig = JSON.parse(fs.readFileSync(existingConfigPath, 'utf-8'));
+      sprintBacklogData = existingConfig.sprints || [];
+      logger.info(`   Используем ${sprintBacklogData.length} спринтов из существующего config`);
+    }
+  } else if (config.boardId) {
     try {
-      // Используем параметр из окружения или дефолт 50
       const sprintAnalysisCount = parseInt(process.env.SPRINT_ANALYSIS_COUNT || '50');
       sprintBacklogData = await collectSprintBacklogData(
         client,

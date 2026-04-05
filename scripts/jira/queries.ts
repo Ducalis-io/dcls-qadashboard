@@ -85,9 +85,10 @@ export function getBugsForSprintsJQL(projectKey: string, sprintIds: number[]): s
  *
  * Используем оператор WAS ... BEFORE для проверки исторического состояния:
  * - created <= targetDate — баг был создан до указанной даты
- * - NOT status WAS IN ("Done") BEFORE targetDate — баг НЕ БЫЛ закрыт до этой даты
+ * - NOT status WAS IN ("Done", "RFT", "Test") BEFORE targetDate — баг НЕ БЫЛ закрыт/в тестировании до этой даты
  *
- * Это даёт точное количество открытых багов в бэклоге на момент завершения спринта
+ * Статусы Done, RFT, Test исключаются, т.к. в Ducalis борде бэклог определяется как:
+ * status NOT IN (Done, RFT, Test)
  */
 export function getOpenBugsAtDateJQL(
   projectKey: string,
@@ -97,7 +98,7 @@ export function getOpenBugsAtDateJQL(
     project = ${projectKey}
     AND issuetype = Bug
     AND created <= "${targetDate}"
-    AND NOT status WAS IN ("Done") BEFORE "${targetDate}"
+    AND NOT status WAS IN ("Done", "RFT", "Test") BEFORE "${targetDate}"
     ORDER BY created DESC
   `
     .replace(/\s+/g, ' ')

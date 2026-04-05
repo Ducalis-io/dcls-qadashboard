@@ -16,7 +16,6 @@ const mockCoverageData = {
 }
 
 export default function Home() {
-  // Загружаем данные через хук (поддерживает local и cloudflare режимы)
   const {
     config,
     periodData: currentData,
@@ -28,7 +27,6 @@ export default function Home() {
 
   const [activeTab, setActiveTab] = useState('overview')
 
-  // Компонент для вкладок
   const TabButton = ({ label, isActive, onClick }: {
     label: string
     isActive: boolean
@@ -46,7 +44,6 @@ export default function Home() {
     </button>
   )
 
-  // Состояние загрузки
   if (loading) {
     return (
       <main className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -58,7 +55,6 @@ export default function Home() {
     )
   }
 
-  // Если не удалось загрузить конфигурацию
   if (!config) {
     return (
       <main className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -71,7 +67,6 @@ export default function Home() {
     )
   }
 
-  // Если не удалось загрузить данные периода
   if (!currentData || !selectedPeriod) {
     return (
       <main className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -83,6 +78,8 @@ export default function Home() {
       </main>
     )
   }
+
+  const sources = currentData.sources || {}
 
   return (
     <main className="min-h-screen bg-gray-100">
@@ -131,20 +128,17 @@ export default function Home() {
         {/* Содержимое вкладок */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
-            {/* Динамика багов по спринтам */}
             {config.visibility?.sprintBacklog !== false && (
               <div className="w-full">
                 <SprintBacklogChart />
               </div>
             )}
 
-            {/* Основные метрики - по 2 в ряд максимум */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {config.visibility?.environment !== false && (
                 <ErrorBoundary title="Распределение багов по окружениям">
                   <EnvironmentCard
-                    data={currentData.environment}
-                    totalBugs={currentData.totalBugs}
+                    sources={sources}
                     selectedPeriod={selectedPeriod}
                     onPeriodChange={setSelectedPeriod}
                   />
@@ -153,8 +147,7 @@ export default function Home() {
               {config.visibility?.resolution !== false && (
                 <ErrorBoundary title="Статус резолюции багов">
                   <ResolutionCard
-                    data={currentData.resolution}
-                    totalBugs={currentData.totalBugs}
+                    sources={sources}
                     selectedPeriod={selectedPeriod}
                     onPeriodChange={setSelectedPeriod}
                   />
@@ -163,8 +156,7 @@ export default function Home() {
               {config.visibility?.priority !== false && (
                 <ErrorBoundary title="Серьёзность багов">
                   <SeverityCard
-                    data={currentData.severity}
-                    totalBugs={currentData.totalBugs}
+                    sources={sources}
                     selectedPeriod={selectedPeriod}
                     onPeriodChange={setSelectedPeriod}
                   />
@@ -178,13 +170,11 @@ export default function Home() {
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-gray-800">Детальная информация</h2>
 
-            {/* Компоненты - на всю ширину если трекеры скрыты */}
             {config.visibility?.components !== false && (
               <div className="w-full">
                 <ErrorBoundary title="Анализ компонентов">
                   <ComponentAnalysis
-                    data={currentData.componentsCreated || currentData.components}
-                    rawBugs={currentData.rawBugsCreated || currentData.rawBugs}
+                    sources={sources}
                     selectedPeriod={selectedPeriod}
                     onPeriodChange={setSelectedPeriod}
                   />
@@ -192,13 +182,11 @@ export default function Home() {
               </div>
             )}
 
-            {/* Трекеры - отдельно */}
             {config.visibility?.trackers !== false && (
               <div className="w-full">
                 <ErrorBoundary title="Трекеры багов">
                   <TrackersCard
-                    data={currentData.trackers}
-                    totalBugs={currentData.totalBugs}
+                    sources={sources}
                     selectedPeriod={selectedPeriod}
                     onPeriodChange={setSelectedPeriod}
                   />
@@ -210,8 +198,7 @@ export default function Home() {
               <div className="w-full">
                 <ErrorBoundary title="Причины создания багов">
                   <ReasonsCard
-                    data={currentData.reasonsCreated || currentData.reasons}
-                    totalBugs={currentData.totalBugsCreated || currentData.totalBugs}
+                    sources={sources}
                     selectedPeriod={selectedPeriod}
                     onPeriodChange={setSelectedPeriod}
                   />

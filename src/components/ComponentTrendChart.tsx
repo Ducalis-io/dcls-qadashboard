@@ -17,6 +17,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { useGroupedPeriodsData } from '@/hooks/useDataSource';
+import type { DataSourceId } from '@/types/metrics';
 
 ChartJS.register(
   CategoryScale,
@@ -45,29 +46,29 @@ const COMPONENT_COLORS = [
   'rgba(230, 126, 34, 0.8)',   // carrot
 ];
 
-const OTHER_COLOR = 'rgba(169, 169, 169, 0.8)'; // darkgray for "Остальное"
-const NO_COMPONENT_COLOR = 'rgba(120, 120, 120, 0.8)'; // darker gray for no_component
+const OTHER_COLOR = 'rgba(169, 169, 169, 0.8)';
+const NO_COMPONENT_COLOR = 'rgba(120, 120, 120, 0.8)';
 
 type EnvironmentFilter = 'all' | 'prod' | 'stage';
 
 interface ComponentTrendChartProps {
   defaultThreshold?: number;
   envFilter?: EnvironmentFilter;
+  activeSource: DataSourceId;
 }
 
 const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
   defaultThreshold = 15,
   envFilter = 'all',
+  activeSource,
 }) => {
   const [normalize, setNormalize] = useState(false);
   const [threshold, setThreshold] = useState(defaultThreshold);
   const [inputValue, setInputValue] = useState(defaultThreshold.toString());
   const [hiddenLabels, setHiddenLabels] = useState<Set<string>>(new Set());
 
-  // Используем сгруппированные данные из контекста
   const { data: allPeriodsData, groupedPeriods, multiplier, loading } = useGroupedPeriodsData();
 
-  // Обработка изменения порога
   const handleThresholdChange = (value: string) => {
     setInputValue(value);
     const num = parseFloat(value);
@@ -76,9 +77,7 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
     }
   };
 
-  // Собираем все уникальные компоненты и определяем "значимые" (хотя бы в одном периоде > threshold)
   const { significantComponents, chartData } = useMemo(() => {
-    // Сначала соберём все данные по компонентам для каждого периода
     const periodsComponentData: Array<{
       periodLabel: string;
       components: Map<string, { count: number; percentage: number }>;
@@ -91,13 +90,12 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
       const [, month, day] = endDate.split('-');
       const periodLabel = `${day}.${month}`;
 
-      // Если есть фильтр по окружению, пересчитываем из rawBugsCreated
+      const source = period.sources?.[activeSource];
       const componentMap = new Map<string, { count: number; percentage: number }>();
       let total = 0;
 
-      if (envFilter !== 'all' && period.rawBugsCreated && period.rawBugsCreated.length > 0) {
-        // Фильтруем баги по environment
-        const filteredBugs = period.rawBugsCreated.filter(bug => {
+      if (envFilter !== 'all' && source?.rawBugs && source.rawBugs.length > 0) {
+        const filteredBugs = source.rawBugs.filter(bug => {
           const env = bug.environment?.toLowerCase() || '';
           if (envFilter === 'prod') {
             return env === 'prod' || env === 'production';
@@ -108,7 +106,6 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
           return true;
         });
 
-        // Пересчитываем компоненты
         const componentCounts = new Map<string, number>();
         filteredBugs.forEach(bug => {
           const component = bug.component || 'no_component';
@@ -121,8 +118,7 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
           componentMap.set(name, { count, percentage });
         });
       } else {
-        // Используем готовые данные componentsCreated
-        const components = period.componentsCreated || period.components || [];
+        const components = source?.components || [];
         total = components.reduce((sum, c) => sum + c.count, 0);
 
         components.forEach((comp) => {
@@ -134,8 +130,6 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
       periodsComponentData.push({ periodLabel, components: componentMap, total });
     });
 
-    // Определяем "значимые" компоненты - те, которые хотя бы в одном периоде >= threshold
-    // Исключаем no_component из этого списка - он обрабатывается отдельно
     const significantSet = new Set<string>();
     periodsComponentData.forEach(({ components }) => {
       components.forEach((data, name) => {
@@ -145,10 +139,8 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
       });
     });
 
-    // Сортируем значимые компоненты (без no_component)
     const significant = Array.from(significantSet).sort();
 
-    // Назначаем цвета
     const colors: Record<string, string> = {};
     let colorIndex = 0;
     significant.forEach((name) => {
@@ -158,29 +150,22 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
     colors['Остальное'] = OTHER_COLOR;
     colors['no_component'] = NO_COMPONENT_COLOR;
 
-    // Формируем данные для графика
     const periodLabels = periodsComponentData.map((p) => p.periodLabel);
 
-    // Для каждого периода группируем данные
-    // Порядок: Остальное (внизу), значимые компоненты, no_component (вверху)
     const datasetsMap: Record<string, number[]> = {};
     datasetsMap['Остальное'] = [];
-    significant.forEach((name) => {
-      datasetsMap[name] = [];
-    });
+    significant.forEach((name) => { datasetsMap[name] = []; });
     datasetsMap['no_component'] = [];
 
     periodsComponentData.forEach(({ components }) => {
       let othersCount = 0;
 
-      // Собираем count для всех категорий
       const counts: Record<string, number> = { 'Остальное': 0, 'no_component': 0 };
       significant.forEach((name) => {
         counts[name] = components.get(name)?.count || 0;
       });
       counts['no_component'] = components.get('no_component')?.count || 0;
 
-      // Суммируем "остальное"
       components.forEach((data, name) => {
         if (!significantSet.has(name) && name !== 'no_component') {
           othersCount += data.count;
@@ -188,34 +173,22 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
       });
       counts['Остальное'] = othersCount;
 
-      // Вычисляем total ТОЛЬКО из ВИДИМЫХ элементов для нормализации
       let visibleTotal = 0;
       Object.entries(counts).forEach(([name, count]) => {
         if (!hiddenLabels.has(name)) {
           visibleTotal += count;
         }
       });
-      if (visibleTotal === 0) visibleTotal = 1; // Защита от деления на 0
+      if (visibleTotal === 0) visibleTotal = 1;
 
-      // Заполняем datasets
       significant.forEach((name) => {
-        if (normalize) {
-          datasetsMap[name].push((counts[name] / visibleTotal) * 100);
-        } else {
-          datasetsMap[name].push(counts[name]);
-        }
+        datasetsMap[name].push(normalize ? (counts[name] / visibleTotal) * 100 : counts[name]);
       });
 
-      if (normalize) {
-        datasetsMap['no_component'].push((counts['no_component'] / visibleTotal) * 100);
-        datasetsMap['Остальное'].push((counts['Остальное'] / visibleTotal) * 100);
-      } else {
-        datasetsMap['no_component'].push(counts['no_component']);
-        datasetsMap['Остальное'].push(counts['Остальное']);
-      }
+      datasetsMap['no_component'].push(normalize ? (counts['no_component'] / visibleTotal) * 100 : counts['no_component']);
+      datasetsMap['Остальное'].push(normalize ? (counts['Остальное'] / visibleTotal) * 100 : counts['Остальное']);
     });
 
-    // Создаём datasets для Chart.js
     const getFillColor = (color: string, opacity: number = 0.9): string => {
       if (color.startsWith('rgba')) {
         return color.replace(/[\d.]+\)$/, `${opacity})`);
@@ -223,7 +196,6 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
       return color;
     };
 
-    // Функция для затемнения цвета линии
     const getDarkerColor = (color: string, factor: number = 0.6): string => {
       const rgbaMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
       if (rgbaMatch) {
@@ -235,20 +207,19 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
       return color;
     };
 
-    // Порядок: Остальное (первый = внизу), значимые, no_component (последний = вверху)
     const datasetOrder = ['Остальное', ...significant, 'no_component'];
 
     const datasets = datasetOrder.map((name) => ({
       label: name,
       data: datasetsMap[name],
-      borderColor: getDarkerColor(colors[name], 0.5),  // Линия темнее
-      backgroundColor: getFillColor(colors[name], 0.9), // Заливка светлее
+      borderColor: getDarkerColor(colors[name], 0.5),
+      backgroundColor: getFillColor(colors[name], 0.9),
       fill: true,
       tension: 0.4,
       pointRadius: 2,
       pointHoverRadius: 6,
       borderWidth: 1.5,
-      hidden: hiddenLabels.has(name),  // Синхронизируем с нашим state
+      hidden: hiddenLabels.has(name),
     }));
 
     return {
@@ -258,9 +229,8 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
         datasets,
       },
     };
-  }, [allPeriodsData, groupedPeriods, threshold, normalize, envFilter, hiddenLabels]);
+  }, [allPeriodsData, groupedPeriods, threshold, normalize, envFilter, activeSource, hiddenLabels]);
 
-  // Обработчик клика по элементу легенды
   const handleLegendClick = useCallback((_e: ChartEvent, legendItem: LegendItem) => {
     const label = legendItem.text;
     if (!label) return;
@@ -292,10 +262,9 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
             padding: 10,
             font: { size: 11 },
           },
-          onClick: handleLegendClick,  // Кастомный обработчик для пересчёта нормализации
+          onClick: handleLegendClick,
         },
         tooltip: {
-          // Сортировка элементов тултипа по убыванию значения (совпадает с визуальным порядком графиков)
           itemSort: (a: TooltipItem<'line'>, b: TooltipItem<'line'>) => b.parsed.y - a.parsed.y,
           callbacks: {
             label: (context: TooltipItem<'line'>) => {
@@ -347,9 +316,7 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* Контролы */}
       <div className="flex items-center justify-between flex-wrap gap-2">
-        {/* Порог группировки */}
         <div className="flex items-center space-x-2 text-sm text-gray-600">
           <span>Порог группировки:</span>
           <input
@@ -366,7 +333,6 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
           </span>
         </div>
 
-        {/* Нормализация */}
         <label className="flex items-center space-x-2 text-sm text-gray-600 cursor-pointer">
           <input
             type="checkbox"
@@ -378,12 +344,10 @@ const ComponentTrendChart: React.FC<ComponentTrendChartProps> = ({
         </label>
       </div>
 
-      {/* График - увеличенная высота */}
       <div className="h-128" style={{ height: '32rem' }}>
-        <Line key={`component-trend-${multiplier}-${envFilter}`} data={chartData} options={options} />
+        <Line key={`component-trend-${multiplier}-${envFilter}-${activeSource}`} data={chartData} options={options} />
       </div>
 
-      {/* Информация о группировке */}
       <div className="text-xs text-gray-500">
         Показаны отдельно: {significantComponents.length > 0 ? significantComponents.join(', ') : '—'}
         {(significantComponents.length > 0 || true) && ' + no_component + «Остальное»'}

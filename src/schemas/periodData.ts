@@ -29,11 +29,11 @@ export const RawBugSchema = z.object({
   component: z.string().optional(),
 });
 
-export const PeriodDataSchema = z.object({
-  periodId: z.string(),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  generatedAt: z.string(),
+/**
+ * Полный набор метрик для одного источника данных.
+ * Одинаковая структура для backlog, created и любых будущих источников.
+ */
+export const SourceMetricsSchema = z.object({
   totalBugs: z.number().int().min(0),
   severity: z.array(MetricItemSchema),
   environment: z.array(MetricItemSchema),
@@ -42,10 +42,15 @@ export const PeriodDataSchema = z.object({
   trackers: z.array(MetricItemSchema),
   reasons: z.array(MetricItemSchema),
   rawBugs: z.array(RawBugSchema),
-  totalBugsCreated: z.number().int().min(0).optional(),
-  componentsCreated: z.array(MetricItemSchema).optional(),
-  reasonsCreated: z.array(MetricItemSchema).optional(),
-  rawBugsCreated: z.array(RawBugSchema).optional(),
+});
+
+export const PeriodDataSchema = z.object({
+  periodId: z.string(),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  generatedAt: z.string(),
+  // Все источники данных в единой структуре
+  sources: z.record(z.string(), SourceMetricsSchema),
 });
 
 export const PeriodConfigSchema = z.object({
@@ -84,4 +89,5 @@ export const DashboardConfigSchema = z.object({
 });
 
 export type ValidatedPeriodData = z.infer<typeof PeriodDataSchema>;
+export type ValidatedSourceMetrics = z.infer<typeof SourceMetricsSchema>;
 export type ValidatedDashboardConfig = z.infer<typeof DashboardConfigSchema>;

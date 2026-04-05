@@ -18,6 +18,7 @@ import {
 import { Line } from 'react-chartjs-2';
 import { useGroupedPeriodsData } from '@/hooks/useDataSource';
 import type { PeriodData } from '@/services/periodDataService';
+import type { MetricField, DataSourceId } from '@/types/metrics';
 import {
   getSeverityColor,
   getEnvironmentColor,
@@ -41,47 +42,44 @@ export interface TrendDataItem {
   count: number;
 }
 
-// Type for metric items that can have different fields (без color - вычисляется)
+// Type for metric items that can have different fields
 type MetricDataItem = { label?: string; environment?: string; status?: string; reason?: string; count: number };
 
 interface TrendChartProps {
-  // Тип данных: какое поле брать из периода
-  dataType: 'severity' | 'environment' | 'resolution' | 'reasons' | 'reasonsCreated';
-  // Функция для извлечения label из элемента данных
+  metricField: MetricField;
+  activeSource: DataSourceId;
   getLabelKey: (item: MetricDataItem) => string;
 }
 
-const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
+const TrendChart: React.FC<TrendChartProps> = ({ metricField, activeSource, getLabelKey }) => {
   const [normalize, setNormalize] = useState(false);
   const [hiddenLabels, setHiddenLabels] = useState<Set<string>>(new Set());
 
-  // Используем сгруппированные данные из контекста
   const { data: allPeriodsData, groupedPeriods, multiplier, loading } = useGroupedPeriodsData();
 
-  // Функция для получения данных из периода с учетом fallback
-  const getDataFromPeriod = (period: PeriodData, type: string): MetricDataItem[] => {
-    // Для reasonsCreated используем reasonsCreated с fallback на reasons
-    if (type === 'reasonsCreated') {
-      return period.reasonsCreated || period.reasons || [];
-    }
-    return (period[type as keyof PeriodData] as MetricDataItem[] | undefined) || [];
+  // Get metric data from a period's source
+  const getDataFromPeriod = (period: PeriodData): MetricDataItem[] => {
+    const source = period.sources?.[activeSource];
+    if (!source) return [];
+    return (source[metricField as keyof typeof source] as MetricDataItem[] | undefined) || [];
   };
 
-  // Собираем все уникальные labels
+  // Collect all unique labels
   const allLabels = useMemo(() => {
     const labelSet = new Set<string>();
     allPeriodsData.forEach(period => {
-      const items = getDataFromPeriod(period, dataType);
+      const items = getDataFromPeriod(period);
       items?.forEach(item => {
         labelSet.add(getLabelKey(item));
       });
     });
     return Array.from(labelSet);
-  }, [allPeriodsData, dataType, getLabelKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allPeriodsData, metricField, activeSource, getLabelKey]);
 
-  // Функция для получения цвета на основе типа данных и label
+  // Color function based on metric field
   const getColorForLabel = (label: string): string => {
-    switch (dataType) {
+    switch (metricField) {
       case 'severity':
         return getSeverityColor(label);
       case 'environment':
@@ -89,14 +87,12 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
       case 'resolution':
         return getResolutionColor(label);
       case 'reasons':
-      case 'reasonsCreated':
         return getReasonColor(label);
       default:
         return 'rgba(128, 128, 128, 0.8)';
     }
   };
 
-  // Собираем цвета для каждого label
   const labelColors = useMemo(() => {
     const colors: Record<string, string> = {};
     allLabels.forEach(label => {
@@ -104,42 +100,32 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
     });
     return colors;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allLabels, dataType]);
+  }, [allLabels, metricField]);
 
-  // Подготавливаем данные для графика
   const chartData = useMemo(() => {
-    // X axis: периоды (короткие даты) - используем groupedPeriods
     const periodLabels = groupedPeriods.map(p => {
       const endDate = p.endDate;
-      // Формат: DD.MM
       const [, month, day] = endDate.split('-');
       return `${day}.${month}`;
     });
 
-    // Функция для создания цвета заливки с нужной прозрачностью
     const getFillColor = (color: string, opacity: number = 0.5): string => {
-      // Если цвет в формате rgba, заменяем opacity
       if (color.startsWith('rgba')) {
         return color.replace(/[\d.]+\)$/, `${opacity})`);
       }
-      // Если цвет в формате hsla, заменяем opacity
       if (color.startsWith('hsla')) {
         return color.replace(/[\d.]+\)$/, `${opacity})`);
       }
-      // Если цвет в формате rgb, конвертируем в rgba
       if (color.startsWith('rgb(')) {
         return color.replace('rgb(', 'rgba(').replace(')', `, ${opacity})`);
       }
-      // Если цвет в формате hsl, конвертируем в hsla
       if (color.startsWith('hsl(')) {
         return color.replace('hsl(', 'hsla(').replace(')', `, ${opacity})`);
       }
       return color;
     };
 
-    // Функция для затемнения цвета линии (уменьшаем RGB компоненты)
     const getDarkerColor = (color: string, factor: number = 0.6): string => {
-      // Для rgba формата
       const rgbaMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
       if (rgbaMatch) {
         const r = Math.round(parseInt(rgbaMatch[1]) * factor);
@@ -147,7 +133,6 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
         const b = Math.round(parseInt(rgbaMatch[3]) * factor);
         return `rgba(${r}, ${g}, ${b}, 1)`;
       }
-      // Для hsla формата - уменьшаем lightness
       const hslaMatch = color.match(/hsla?\((\d+),\s*([\d.]+)%,\s*([\d.]+)%/);
       if (hslaMatch) {
         const h = parseInt(hslaMatch[1]);
@@ -158,17 +143,14 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
       return color;
     };
 
-    // Datasets: один для каждого label
     const datasets = allLabels.map(label => {
       const data = allPeriodsData.map(period => {
-        const items = getDataFromPeriod(period, dataType);
+        const items = getDataFromPeriod(period);
         const item = items?.find(i => getLabelKey(i) === label);
 
         if (normalize) {
-          // Процент от общего ТОЛЬКО по ВИДИМЫМ labels
           const total = items?.reduce((sum, i) => {
             const itemLabel = getLabelKey(i);
-            // Включаем только видимые labels в сумму
             if (!hiddenLabels.has(itemLabel)) {
               return sum + (i.count || 0);
             }
@@ -185,14 +167,14 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
       return {
         label,
         data,
-        borderColor: getDarkerColor(baseColor, 0.5),  // Линия темнее (60% от базового)
-        backgroundColor: getFillColor(baseColor, 0.9), // Заливка светлее и прозрачнее
+        borderColor: getDarkerColor(baseColor, 0.5),
+        backgroundColor: getFillColor(baseColor, 0.9),
         fill: true,
         tension: 0.4,
         pointRadius: 2,
         pointHoverRadius: 6,
-        borderWidth: 1.5,  // Чуть толще для лучшей видимости
-        hidden: isHidden,  // Синхронизируем скрытие с нашим state
+        borderWidth: 1.5,
+        hidden: isHidden,
       };
     });
 
@@ -200,9 +182,9 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
       labels: periodLabels,
       datasets,
     };
-  }, [allPeriodsData, allLabels, labelColors, groupedPeriods, dataType, getLabelKey, normalize, hiddenLabels]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allPeriodsData, allLabels, labelColors, groupedPeriods, metricField, activeSource, getLabelKey, normalize, hiddenLabels]);
 
-  // Обработчик клика по элементу легенды
   const handleLegendClick = useCallback((_e: ChartEvent, legendItem: LegendItem) => {
     const label = legendItem.text;
     if (!label) return;
@@ -233,10 +215,9 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
           padding: 10,
           font: { size: 11 },
         },
-        onClick: handleLegendClick,  // Кастомный обработчик для пересчёта нормализации
+        onClick: handleLegendClick,
       },
       tooltip: {
-        // Сортировка элементов тултипа по убыванию значения (совпадает с визуальным порядком графиков)
         itemSort: (a: TooltipItem<'line'>, b: TooltipItem<'line'>) => b.parsed.y - a.parsed.y,
         callbacks: {
           label: (context: TooltipItem<'line'>) => {
@@ -256,7 +237,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
         max: normalize ? 100 : undefined,
         title: {
           display: true,
-          text: normalize ? 'Процент (%)' : 'Количество',
+          text: normalize ? 'Процент (%)' : 'Количест��о',
         },
       },
       x: {
@@ -286,7 +267,6 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
 
   return (
     <div className="space-y-3">
-      {/* Контрол нормализации */}
       <div className="flex items-center justify-end">
         <label className="flex items-center space-x-2 text-sm text-gray-600 cursor-pointer">
           <input
@@ -299,9 +279,8 @@ const TrendChart: React.FC<TrendChartProps> = ({ dataType, getLabelKey }) => {
         </label>
       </div>
 
-      {/* График */}
       <div className="h-64">
-        <Line key={`trend-${dataType}-${multiplier}`} data={chartData} options={options} />
+        <Line key={`trend-${metricField}-${activeSource}-${multiplier}`} data={chartData} options={options} />
       </div>
     </div>
   );
