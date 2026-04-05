@@ -17,8 +17,9 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { useGroupedPeriodsData } from '@/hooks/useDataSource';
+import { filterBugsByEnv, aggregateSeverity, aggregateEnvironment, aggregateResolution, aggregateComponents, aggregateReasons } from '@/utils/envFilter';
 import type { PeriodData } from '@/services/periodDataService';
-import type { MetricField, DataSourceId } from '@/types/metrics';
+import type { MetricField, DataSourceId, EnvironmentFilter } from '@/types/metrics';
 import {
   getSeverityColor,
   getEnvironmentColor,
@@ -49,18 +50,34 @@ interface TrendChartProps {
   metricField: MetricField;
   activeSource: DataSourceId;
   getLabelKey: (item: MetricDataItem) => string;
+  envFilter?: EnvironmentFilter;
 }
 
-const TrendChart: React.FC<TrendChartProps> = ({ metricField, activeSource, getLabelKey }) => {
+const TrendChart: React.FC<TrendChartProps> = ({ metricField, activeSource, getLabelKey, envFilter = 'all' }) => {
   const [normalize, setNormalize] = useState(false);
   const [hiddenLabels, setHiddenLabels] = useState<Set<string>>(new Set());
 
   const { data: allPeriodsData, groupedPeriods, multiplier, loading } = useGroupedPeriodsData();
 
-  // Get metric data from a period's source
+  // Aggregate function per metric field (for env filtering)
+  const aggregateByField: Record<string, (bugs: Array<{ environment?: string; component?: string; severity?: string; status?: string; reason?: string }>) => MetricDataItem[]> = useMemo(() => ({
+    severity: (bugs) => aggregateSeverity(bugs) as MetricDataItem[],
+    environment: (bugs) => aggregateEnvironment(bugs) as MetricDataItem[],
+    resolution: (bugs) => aggregateResolution(bugs) as MetricDataItem[],
+    components: (bugs) => aggregateComponents(bugs) as MetricDataItem[],
+    reasons: (bugs) => aggregateReasons(bugs) as MetricDataItem[],
+  }), []);
+
+  // Get metric data from a period's source, applying env filter if needed
   const getDataFromPeriod = (period: PeriodData): MetricDataItem[] => {
     const source = period.sources?.[activeSource];
     if (!source) return [];
+
+    if (envFilter !== 'all' && source.rawBugs?.length && aggregateByField[metricField]) {
+      const filtered = filterBugsByEnv(source.rawBugs, envFilter);
+      return aggregateByField[metricField](filtered);
+    }
+
     return (source[metricField as keyof typeof source] as MetricDataItem[] | undefined) || [];
   };
 
@@ -75,7 +92,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ metricField, activeSource, getL
     });
     return Array.from(labelSet);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allPeriodsData, metricField, activeSource, getLabelKey]);
+  }, [allPeriodsData, metricField, activeSource, getLabelKey, envFilter]);
 
   // Color function based on metric field
   const getColorForLabel = (label: string): string => {
@@ -183,7 +200,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ metricField, activeSource, getL
       datasets,
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allPeriodsData, allLabels, labelColors, groupedPeriods, metricField, activeSource, getLabelKey, normalize, hiddenLabels]);
+  }, [allPeriodsData, allLabels, labelColors, groupedPeriods, metricField, activeSource, getLabelKey, normalize, hiddenLabels, envFilter]);
 
   const handleLegendClick = useCallback((_e: ChartEvent, legendItem: LegendItem) => {
     const label = legendItem.text;
@@ -280,7 +297,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ metricField, activeSource, getL
       </div>
 
       <div className="h-64">
-        <Line key={`trend-${metricField}-${activeSource}-${multiplier}`} data={chartData} options={options} />
+        <Line key={`trend-${metricField}-${activeSource}-${multiplier}-${envFilter}`} data={chartData} options={options} />
       </div>
     </div>
   );

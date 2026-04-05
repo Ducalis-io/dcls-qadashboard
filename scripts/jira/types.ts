@@ -118,20 +118,17 @@ export interface SprintBugData {
 }
 
 /**
- * Минимальный набор данных о баге для фронтенда (фильтрация по окружению/компоненту).
+ * Минимальный набор данных о баге для фронтенда (фильтрация по окружению).
  *
- * Удалены чувствительные поля для публичного деплоя:
- * - key: string           // Jira issue key (e.g., "PROJ-123")
- * - summary: string       // Issue title
- * - severity?: string     // Bug severity
- * - status: string        // Issue status
- * - createdDate: string   // Creation date
- * - resolvedDate?: string // Resolution date
- * - sprintName?: string   // Sprint name
+ * Включены только поля, необходимые для кросс-фильтрации метрик на фронте.
+ * Удалены чувствительные поля: key, summary, createdDate, resolvedDate, sprintName.
  */
 export interface RawBug {
   environment?: string;
   component?: string;
+  severity?: string;
+  status?: string;
+  reason?: string;
 }
 
 /**

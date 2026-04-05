@@ -38,7 +38,7 @@ export interface SourceMetrics {
   components: Array<{ name: string; count: number }>;
   trackers: Array<{ name: string; count: number }>;
   reasons: Array<{ reason: string; count: number }>;
-  rawBugs: Array<{ environment?: string; component?: string }>;
+  rawBugs: Array<{ environment?: string; component?: string; severity?: string; status?: string; reason?: string }>;
 }
 
 // Типы данных из JSON

@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { MetricCard } from '@/components/ui';
 import TrendChart from '@/components/TrendChart';
 import { DATA_DESCRIPTIONS } from '@/components/InfoTooltip';
 import { adaptResolutionData } from '@/utils/metricAdapters';
+import { filterBugsByEnv, aggregateResolution } from '@/utils/envFilter';
 import { getAvailableSourcesForMetric } from '@/config/dataSources';
 import type { SourceMetrics } from '@/services/periodDataService';
-import type { DataSourceId } from '@/types/metrics';
+import type { DataSourceId, EnvironmentFilter } from '@/types/metrics';
 
 interface ResolutionCardProps {
   sources: Record<string, SourceMetrics>;
@@ -22,9 +23,18 @@ const ResolutionCard: React.FC<ResolutionCardProps> = ({
 }) => {
   const availableSources = getAvailableSourcesForMetric('resolution', Object.keys(sources));
   const [activeSource, setActiveSource] = useState<DataSourceId>(availableSources[0]?.id ?? 'backlog');
+  const [envFilter, setEnvFilter] = useState<EnvironmentFilter>('all');
 
   const sourceData = sources[activeSource];
-  const adaptedData = sourceData ? adaptResolutionData(sourceData.resolution, sourceData.totalBugs) : [];
+
+  const adaptedData = useMemo(() => {
+    if (!sourceData) return [];
+    if (envFilter === 'all') {
+      return adaptResolutionData(sourceData.resolution, sourceData.totalBugs);
+    }
+    const filtered = filterBugsByEnv(sourceData.rawBugs, envFilter);
+    return adaptResolutionData(aggregateResolution(filtered), filtered.length);
+  }, [sourceData, envFilter]);
 
   return (
     <MetricCard
@@ -36,10 +46,13 @@ const ResolutionCard: React.FC<ResolutionCardProps> = ({
       availableSources={availableSources}
       activeSource={activeSource}
       onSourceChange={setActiveSource}
+      showEnvFilter
+      envFilter={envFilter}
+      onEnvFilterChange={setEnvFilter}
       selectedPeriod={selectedPeriod}
       onPeriodChange={onPeriodChange}
       trendComponent={
-        <TrendChart metricField="resolution" activeSource={activeSource} getLabelKey={(item) => item.status || ''} />
+        <TrendChart metricField="resolution" activeSource={activeSource} envFilter={envFilter} getLabelKey={(item) => item.status || ''} />
       }
     />
   );

@@ -16,9 +16,11 @@ import PeriodSelector from '@/components/PeriodSelector';
 import InfoTooltip, { DATA_DESCRIPTIONS } from '@/components/InfoTooltip';
 import ComponentTrendChart from '@/components/ComponentTrendChart';
 import DataSourceSwitcher from '@/components/ui/DataSourceSwitcher';
+import EnvironmentFilter from '@/components/ui/EnvironmentFilter';
 import { getAvailableSourcesForMetric } from '@/config/dataSources';
+import { filterBugsByEnv, aggregateComponents } from '@/utils/envFilter';
 import type { SourceMetrics } from '@/services/periodDataService';
-import type { DataSourceId } from '@/types/metrics';
+import type { DataSourceId, EnvironmentFilter as FilterType } from '@/types/metrics';
 
 ChartJS.register(
   CategoryScale,
@@ -28,18 +30,6 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-
-interface ComponentData {
-  name: string;
-  count: number;
-}
-
-interface RawBug {
-  environment?: string;
-  component?: string;
-}
-
-type EnvironmentFilter = 'all' | 'prod' | 'stage';
 
 interface ComponentAnalysisProps {
   sources: Record<string, SourceMetrics>;
@@ -54,52 +44,26 @@ const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({
 }) => {
   const availableSources = getAvailableSourcesForMetric('components', Object.keys(sources));
   const [activeSource, setActiveSource] = useState<DataSourceId>(availableSources[0]?.id ?? 'backlog');
-  const [envFilter, setEnvFilter] = useState<EnvironmentFilter>('all');
+  const [envFilter, setEnvFilter] = useState<FilterType>('all');
   const [showTrend, setShowTrend] = useState(true);
 
   const sourceData = sources[activeSource];
 
-  // Filter and recalculate data based on rawBugs
   const filteredData = useMemo(() => {
-    const data: ComponentData[] = sourceData?.components || [];
-    const rawBugs: RawBug[] = sourceData?.rawBugs || [];
-
-    if (!rawBugs || rawBugs.length === 0 || envFilter === 'all') {
-      return data;
-    }
-
-    const filteredBugs = rawBugs.filter(bug => {
-      const env = bug.environment?.toLowerCase() || '';
-      if (envFilter === 'prod') {
-        return env === 'prod' || env === 'production';
-      }
-      if (envFilter === 'stage') {
-        return env === 'stage' || env === 'staging';
-      }
-      return true;
-    });
-
-    const componentCounts = new Map<string, number>();
-    filteredBugs.forEach(bug => {
-      const component = bug.component || 'no_component';
-      componentCounts.set(component, (componentCounts.get(component) || 0) + 1);
-    });
-
-    return Array.from(componentCounts.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
+    if (!sourceData) return [];
+    if (envFilter === 'all') return sourceData.components || [];
+    const filtered = filterBugsByEnv(sourceData.rawBugs, envFilter);
+    return aggregateComponents(filtered);
   }, [sourceData, envFilter]);
 
-  // Header controls (shared between empty and data states)
   const headerControls = (
     <div className="flex items-center space-x-2">
-      {availableSources.length > 1 && (
-        <DataSourceSwitcher
-          sources={availableSources}
-          activeSource={activeSource}
-          onChange={setActiveSource}
-        />
-      )}
+      <DataSourceSwitcher
+        sources={availableSources}
+        activeSource={activeSource}
+        onChange={setActiveSource}
+      />
+      <EnvironmentFilter value={envFilter} onChange={setEnvFilter} />
       <div className="flex space-x-1">
         <button
           onClick={() => setShowTrend(false)}
@@ -112,26 +76,6 @@ const ComponentAnalysis: React.FC<ComponentAnalysisProps> = ({
           className={`px-2 py-1 text-xs rounded ${showTrend ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
         >
           Trend
-        </button>
-      </div>
-      <div className="flex space-x-1">
-        <button
-          onClick={() => setEnvFilter('all')}
-          className={`px-2 py-1 text-xs rounded ${envFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
-        >
-          Все
-        </button>
-        <button
-          onClick={() => setEnvFilter('prod')}
-          className={`px-2 py-1 text-xs rounded ${envFilter === 'prod' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
-        >
-          Prod
-        </button>
-        <button
-          onClick={() => setEnvFilter('stage')}
-          className={`px-2 py-1 text-xs rounded ${envFilter === 'stage' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
-        >
-          Stage
         </button>
       </div>
       {!showTrend && onPeriodChange && selectedPeriod && (

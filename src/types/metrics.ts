@@ -33,8 +33,8 @@ export type DataSourceId = string; // 'backlog' | 'created' | ... extensible
  */
 export interface DataSourceOption {
   id: DataSourceId;
-  label: string;       // Полное название: "Бэклог спринтов"
-  shortLabel: string;  // Короткое для кнопок: "Бэклог"
+  label: string;       // Полное название: "В спринтах периода"
+  shortLabel: string;  // Короткое для кнопок: "В спринтах"
 }
 
 /**

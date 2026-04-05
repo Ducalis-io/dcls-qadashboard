@@ -14,19 +14,15 @@ export const MetricItemSchema = z.object({
 });
 
 /**
- * Минимальный набор данных о баге для фильтрации на фронтенде.
- *
- * Удалены чувствительные поля для публичного деплоя:
- * - key: z.string()              // Jira issue key
- * - summary: z.string()          // Issue title
- * - severity: z.string().optional()
- * - status: z.string()
- * - createdDate: z.string()
- * - resolvedDate: z.string().optional()
+ * Минимальный набор данных о баге для кросс-фильтрации метрик на фронтенде.
+ * Включены поля для фильтрации по окружению с пересчётом любой метрики.
  */
 export const RawBugSchema = z.object({
   environment: z.string().optional(),
   component: z.string().optional(),
+  severity: z.string().optional(),
+  status: z.string().optional(),
+  reason: z.string().optional(),
 });
 
 /**

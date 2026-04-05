@@ -18,22 +18,17 @@ const DataSourceSwitcher: React.FC<DataSourceSwitcherProps> = ({
   if (sources.length <= 1) return null;
 
   return (
-    <div className="flex space-x-1">
+    <select
+      value={activeSource}
+      onChange={(e) => onChange(e.target.value)}
+      className="px-2 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+    >
       {sources.map(source => (
-        <button
-          key={source.id}
-          onClick={() => onChange(source.id)}
-          className={`px-2 py-1 text-xs rounded transition-colors ${
-            activeSource === source.id
-              ? 'bg-indigo-600 text-white'
-              : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-          }`}
-          title={source.label}
-        >
+        <option key={source.id} value={source.id}>
           {source.shortLabel}
-        </button>
+        </option>
       ))}
-    </div>
+    </select>
   );
 };
 

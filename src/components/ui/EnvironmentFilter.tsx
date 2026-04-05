@@ -8,10 +8,10 @@ interface EnvironmentFilterProps {
   onChange: (filter: FilterType) => void;
 }
 
-const FILTERS: { value: FilterType; label: string; activeClass: string }[] = [
-  { value: 'all', label: 'Все', activeClass: 'bg-blue-600' },
-  { value: 'prod', label: 'Prod', activeClass: 'bg-red-600' },
-  { value: 'stage', label: 'Stage', activeClass: 'bg-teal-600' },
+const FILTERS: { value: FilterType; label: string }[] = [
+  { value: 'all', label: 'Все окружения' },
+  { value: 'prod', label: 'Prod' },
+  { value: 'stage', label: 'Stage' },
 ];
 
 const EnvironmentFilter: React.FC<EnvironmentFilterProps> = ({
@@ -19,21 +19,17 @@ const EnvironmentFilter: React.FC<EnvironmentFilterProps> = ({
   onChange,
 }) => {
   return (
-    <div className="flex space-x-1">
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value as FilterType)}
+      className="px-2 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+    >
       {FILTERS.map((filter) => (
-        <button
-          key={filter.value}
-          onClick={() => onChange(filter.value)}
-          className={`px-2 py-1 text-xs rounded ${
-            value === filter.value
-              ? `${filter.activeClass} text-white`
-              : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-          }`}
-        >
+        <option key={filter.value} value={filter.value}>
           {filter.label}
-        </button>
+        </option>
       ))}
-    </div>
+    </select>
   );
 };
 

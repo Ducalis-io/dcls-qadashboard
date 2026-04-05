@@ -6,7 +6,7 @@ import { DATA_DESCRIPTIONS } from '@/components/InfoTooltip';
 import { adaptTrackersData } from '@/utils/metricAdapters';
 import { getAvailableSourcesForMetric } from '@/config/dataSources';
 import type { SourceMetrics } from '@/services/periodDataService';
-import type { DataSourceId } from '@/types/metrics';
+import type { DataSourceId, EnvironmentFilter } from '@/types/metrics';
 
 interface TrackersCardProps {
   sources: Record<string, SourceMetrics>;
@@ -21,8 +21,10 @@ const TrackersCard: React.FC<TrackersCardProps> = ({
 }) => {
   const availableSources = getAvailableSourcesForMetric('trackers', Object.keys(sources));
   const [activeSource, setActiveSource] = useState<DataSourceId>(availableSources[0]?.id ?? 'backlog');
+  const [envFilter, setEnvFilter] = useState<EnvironmentFilter>('all');
 
   const sourceData = sources[activeSource];
+  // Trackers не имеют поля в rawBugs — фильтрация не применяется, но dropdown показываем для единообразия
   const adaptedData = sourceData ? adaptTrackersData(sourceData.trackers, sourceData.totalBugs) : [];
 
   return (
@@ -35,6 +37,9 @@ const TrackersCard: React.FC<TrackersCardProps> = ({
       availableSources={availableSources}
       activeSource={activeSource}
       onSourceChange={setActiveSource}
+      showEnvFilter
+      envFilter={envFilter}
+      onEnvFilterChange={setEnvFilter}
       selectedPeriod={selectedPeriod}
       onPeriodChange={onPeriodChange}
     />

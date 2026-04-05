@@ -164,9 +164,7 @@ export function transformBugsToMetrics(
     },
   ];
 
-  // 7. Raw bugs - минимальный набор для фильтрации на фронтенде
-  // Удалены чувствительные поля: key, summary, severity, status, createdDate, resolvedDate
-  // При необходимости восстановить - см. RawBug interface в types.ts
+  // 7. Raw bugs - минимальный набор для кросс-фильтрации на фронтенде
   const rawBugs: RawBug[] = issues.map((issue) => {
     // Извлекаем environment из указанного поля
     const envValue = issue.fields[environmentField] || issue.fields.environment;
@@ -193,9 +191,41 @@ export function transformBugsToMetrics(
       componentName = issue.fields.components[0].name;
     }
 
+    // Извлекаем severity
+    const severityValue = issue.fields[severityField];
+    let sev = 'unknown';
+    if (typeof severityValue === 'object' && severityValue !== null) {
+      sev = (severityValue as any).value || (severityValue as any).name || 'unknown';
+    } else if (typeof severityValue === 'string') {
+      sev = severityValue;
+    } else if (issue.fields.priority?.name) {
+      sev = issue.fields.priority.name;
+    }
+
+    // Извлекаем status (нормализованный)
+    const statusCategory = issue.fields.status?.statusCategory?.name || '';
+    let normalizedStatus = 'To Do';
+    if (statusCategory === 'Done' || issue.fields.status?.name === 'Done') {
+      normalizedStatus = 'Done';
+    } else if (statusCategory === 'In Progress' || issue.fields.status?.name === 'In Progress') {
+      normalizedStatus = 'In Progress';
+    }
+
+    // Извлекаем reason
+    const reasonValue = issue.fields[bugReasonField];
+    let reason = 'другое';
+    if (typeof reasonValue === 'object' && reasonValue !== null) {
+      reason = (reasonValue as any).value || (reasonValue as any).name || 'другое';
+    } else if (typeof reasonValue === 'string') {
+      reason = reasonValue;
+    }
+
     return {
       environment: env.toLowerCase(),
       component: componentName,
+      severity: sev.toLowerCase(),
+      status: normalizedStatus,
+      reason,
     };
   });
 
