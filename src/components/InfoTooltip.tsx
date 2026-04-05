@@ -97,9 +97,9 @@ const SOURCE_DESCRIPTIONS = (
   <div className="mt-2 pt-2 border-t border-gray-700">
     <p className="font-semibold text-blue-300 mb-1 text-xs">Источники данных (переключатель):</p>
     <ul className="text-xs text-gray-300 space-y-1">
-      <li><strong className="text-white">Бэклог</strong> — баги, назначенные на спринты периода <code className="bg-gray-700 px-1 rounded">Sprint IN (ids)</code></li>
+      <li><strong className="text-white">В спринтах</strong> — все баги из спринтов периода <code className="bg-gray-700 px-1 rounded">Sprint IN (ids)</code></li>
       <li><strong className="text-white">Созданные</strong> — баги, созданные в даты периода <code className="bg-gray-700 px-1 rounded">created &gt;= ... AND created &lt;= ...</code></li>
-      <li><strong className="text-white">Весь бэклог</strong> — все открытые баги проекта на конец периода <code className="bg-gray-700 px-1 rounded">NOT status WAS IN (&quot;Done&quot;, &quot;RFT&quot;, &quot;Test&quot;)</code></li>
+      <li><strong className="text-white">Бэклог</strong> — все открытые баги проекта на конец периода <code className="bg-gray-700 px-1 rounded">NOT status WAS IN (&quot;Done&quot;, &quot;RFT&quot;, &quot;Test&quot;)</code></li>
     </ul>
   </div>
 );

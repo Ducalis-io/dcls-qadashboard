@@ -121,11 +121,11 @@ dcls-qadashboard/
 
 | Источник | Описание | JQL |
 |----------|----------|-----|
-| **backlog** | Баги в бэклоге спринтов периода | `Sprint IN (sprintIds)` |
+| **backlog** | Все баги из спринтов периода | `Sprint IN (sprintIds)` |
 | **created** | Баги, созданные в даты периода | `created >= startDate AND created <= endDate` |
-| **totalBacklog** | Весь бэклог проекта на дату окончания периода | `created <= endDate AND NOT status WAS IN ("Done", "RFT", "Test") BEFORE endDate` |
+| **totalBacklog** | Открытые баги проекта на конец периода | `created <= endDate AND NOT status WAS IN ("Done", "RFT", "Test") BEFORE endDate` |
 
-На каждой карточке метрики есть переключатель источника (pill-кнопки «Бэклог» / «Созданные» / «Весь бэклог»). Это позволяет анализировать одну и ту же метрику (severity, environment и т.д.) с разных точек зрения.
+На каждой карточке метрики есть переключатель источника (pill-кнопки «В спринтах» / «Созданные» / «Бэклог»). Это позволяет анализировать одну и ту же метрику (severity, environment и т.д.) с разных точек зрения.
 
 Данные хранятся в расширяемой структуре `sources`:
 
@@ -188,7 +188,7 @@ DashboardProvider (единственный источник данных)
 Компоненты (получают sources, управляют activeSource внутри)
 ├── page.tsx                    # Передаёт currentData.sources в карточки
 ├── SeverityCard / EnvironmentCard / ...
-│   ├── DataSourceSwitcher      # Переключатель «Бэклог» / «Созданные»
+│   ├── DataSourceSwitcher      # Переключатель «В спринтах» / «Созданные» / «Бэклог»
 │   └── MetricCard → TrendChart / PieChart / Table
 ├── ComponentAnalysis
 │   ├── DataSourceSwitcher
@@ -359,9 +359,9 @@ npm run fetch-jira -- --skip-sprints
   endDate: string;
   generatedAt: string;
   sources: {
-    backlog: SourceMetrics;       // Баги в бэклоге спринтов
+    backlog: SourceMetrics;       // Все баги из спринтов периода
     created: SourceMetrics;       // Баги, созданные в период
-    totalBacklog: SourceMetrics;  // Весь бэклог проекта на дату окончания периода
+    totalBacklog: SourceMetrics;  // Открытые баги проекта на конец периода
     // ... будущие источники добавляются как новые ключи
   }
 }

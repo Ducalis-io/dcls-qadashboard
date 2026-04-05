@@ -374,7 +374,7 @@ async function main() {
     logger.info(`   📊 Причины (созданные): ${createdMetrics.reasons.length} категорий`);
     logger.info(`   📊 Raw bugs (созданные): ${createdMetrics.rawBugs.length} записей`);
 
-    // === ТРЕТИЙ ЗАПРОС: Весь бэклог проекта на дату окончания периода ===
+    // === ТРЕТИЙ ЗАПРОС: Открытые баги проекта на конец периода ===
     logger.info(`   🔍 Загрузка всего бэклога на дату ${period.endDate}...`);
 
     await new Promise(resolve => setTimeout(resolve, 2000));
